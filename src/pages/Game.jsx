@@ -322,6 +322,7 @@ export default function Game() {
   // cubo Animale — un'unica cronologia, un unico "indietro" coerente.
   function handleUndoLastAction() {
     setError(null)
+    if (!isMyTurn) return
     if (turnActions.length === 0) return
 
     const last = turnActions[turnActions.length - 1]
@@ -334,9 +335,14 @@ export default function Game() {
     }
   }
 
-  function handleUndoAllActions() {
+  // "Tutto il turno" significa davvero tutto: dischi, cubi, E la carta
+  // Animale presa in questo turno (se c'è), non solo la plancia.
+  async function handleUndoAllActions() {
     setError(null)
-    setTurnActions([])
+    if (!isMyTurn) return
+
+    const remainingActions = await undoAnimalCardTake(turnActions)
+    setTurnActions(remainingActions)
     setRemainingDiscs(turnDiscsTaken)
     setSelectedColor(turnDiscsTaken[0] ?? null)
     setSelectedCardForCube(null)
@@ -402,11 +408,11 @@ export default function Game() {
   // annulliamo a cascata insieme alla presa: la carta torna sulla riga
   // centrale, i cubi tornano "in mano" e le caselle si liberano di
   // nuovo — un solo gesto invece di doverlo fare a mano cubo per cubo.
-  async function handleUndoAnimalCard() {
-    setError(null)
-    if (!animalCardTurn) return
+  // Riusata sia dal pulsante dedicato sia da "Annulla tutto il turno".
+  async function undoAnimalCardTake(actionsBeforeUndo) {
+    if (!animalCardTurn) return actionsBeforeUndo
 
-    const remainingActions = turnActions.filter(
+    const remainingActions = actionsBeforeUndo.filter(
       (a) => !(a.type === 'cube' && a.cardId === animalCardTurn.cardId)
     )
 
@@ -419,8 +425,15 @@ export default function Game() {
 
     await supabase.from('games').update({ animal_row: newRow, animal_deck: newDeck }).eq('id', game.id)
     await supabase.from('players').update({ animal_cards: newHand }).eq('id', myPlayer.id)
-    setTurnActions(remainingActions)
     setAnimalCardTurn(null)
+    return remainingActions
+  }
+
+  async function handleUndoAnimalCard() {
+    setError(null)
+    if (!isMyTurn) return
+    const remainingActions = await undoAnimalCardTake(turnActions)
+    setTurnActions(remainingActions)
   }
 
   function handleSelectCardForCube(handEntry) {
@@ -487,155 +500,160 @@ export default function Game() {
         gap: 12
       }}
     >
-      {/* Pannello superiore: header, giocatori, plancia centrale, carte disponibili */}
-      <div style={{ ...panelStyle, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza {game.room_code}</h1>
-          <span style={{ color: '#666', fontSize: '0.85rem' }}>
-            Modalità: {game.board_mode === 'isole' ? 'Isole' : 'Standard (Fiume)'}
-          </span>
-          {game.status === 'playing' && (
+      {/* Pannello superiore, diviso in due colonne orizzontali */}
+      <div style={{ ...panelStyle, flexShrink: 0, display: 'flex', gap: 16 }}>
+        {/* Colonna sinistra: header, giocatori, plancia centrale, carte disponibili */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza {game.room_code}</h1>
             <span style={{ color: '#666', fontSize: '0.85rem' }}>
-              {game.started_at ? `Tempo: ${formatDuration(now - new Date(game.started_at).getTime())} · ` : ''}
-              Turno: {game.turn_count || '—'}
+              Modalità: {game.board_mode === 'isole' ? 'Isole' : 'Standard (Fiume)'}
             </span>
+            {game.status === 'playing' && (
+              <span style={{ color: '#666', fontSize: '0.85rem' }}>
+                {game.started_at ? `Tempo: ${formatDuration(now - new Date(game.started_at).getTime())} · ` : ''}
+                Turno: {game.turn_count || '—'}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '6px 0' }}>
+            {players.map((p) => {
+              const isCurrent = game.status === 'playing' && game.turn_order?.[game.current_turn_index] === p.id
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    padding: isCurrent ? '6px 16px' : '3px 10px',
+                    borderRadius: 999,
+                    background: isCurrent ? '#fef3c7' : '#f1efe8',
+                    border: isCurrent ? '2px solid #d97706' : '1px solid #ccc',
+                    fontWeight: isCurrent ? 'bold' : 'normal',
+                    fontSize: isCurrent ? '1.1rem' : '0.85rem'
+                  }}
+                >
+                  {p.nickname}
+                </div>
+              )
+            })}
+          </div>
+
+          {game.status === 'waiting' && (
+            <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
           )}
+
           {game.status === 'playing' && (
-            <div style={{ marginLeft: 'auto' }}>
-              <ScoringReference boardMode={game.board_mode} />
-            </div>
-          )}
-        </div>
+            <>
+              <div style={{ fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <strong>Plancia centrale:</strong>
+                  {game.central_board.map((slot, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleTakeSlot(i)}
+                      style={{
+                        display: 'flex',
+                        gap: 3,
+                        padding: 5,
+                        border: i === takenSlotIndex ? '2px solid #333' : '1px solid #ccc',
+                        borderRadius: 6,
+                        cursor: isMyTurn ? 'pointer' : 'default',
+                        opacity: slot.length === 0 ? 0.3 : 1
+                      }}
+                    >
+                      {slot.map((color, j) => (
+                        <span
+                          key={j}
+                          style={{ width: 14, height: 14, borderRadius: '50%', background: DISC_HEX[color] }}
+                        />
+                      ))}
+                    </div>
+                  ))}
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '6px 0' }}>
-          {players.map((p) => {
-            const isCurrent = game.status === 'playing' && game.turn_order?.[game.current_turn_index] === p.id
-            return (
-              <div
-                key={p.id}
-                style={{
-                  padding: isCurrent ? '6px 16px' : '3px 10px',
-                  borderRadius: 999,
-                  background: isCurrent ? '#fef3c7' : '#f1efe8',
-                  border: isCurrent ? '2px solid #d97706' : '1px solid #ccc',
-                  fontWeight: isCurrent ? 'bold' : 'normal',
-                  fontSize: isCurrent ? '1.1rem' : '0.85rem'
-                }}
-              >
-                {p.nickname}
-              </div>
-            )
-          })}
-        </div>
+                  {isMyTurn && turnActions.length > 0 && (
+                    <>
+                      <button onClick={handleUndoLastAction}>Annulla ultima azione</button>
+                      <button onClick={handleUndoAllActions}>Annulla tutto il turno</button>
+                    </>
+                  )}
+                </div>
 
-        {game.status === 'waiting' && (
-          <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
-        )}
-
-        {game.status === 'playing' && (
-          <>
-            <div style={{ fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <strong>Plancia centrale:</strong>
-                {game.central_board.map((slot, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleTakeSlot(i)}
-                    style={{
-                      display: 'flex',
-                      gap: 3,
-                      padding: 5,
-                      border: i === takenSlotIndex ? '2px solid #333' : '1px solid #ccc',
-                      borderRadius: 6,
-                      cursor: isMyTurn ? 'pointer' : 'default',
-                      opacity: slot.length === 0 ? 0.3 : 1
-                    }}
-                  >
-                    {slot.map((color, j) => (
+                {isMyTurn && turnDiscsTaken.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                    <span>In mano:</span>
+                    {remainingDiscs.map((c, i) => (
                       <span
-                        key={j}
-                        style={{ width: 14, height: 14, borderRadius: '50%', background: DISC_HEX[color] }}
+                        key={i}
+                        onClick={() => handleSelectColor(c)}
+                        style={{
+                          display: 'inline-block',
+                          width: 18,
+                          height: 18,
+                          borderRadius: '50%',
+                          background: DISC_HEX[c],
+                          cursor: 'pointer',
+                          outline: selectedColor === c ? '3px solid #333' : 'none',
+                          outlineOffset: 2
+                        }}
                       />
                     ))}
+                    {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
+                    <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
+                      Rinuncia alla presa
+                    </button>
+                    <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0}>
+                      Conferma turno
+                    </button>
                   </div>
-                ))}
-
-                {isMyTurn && turnActions.length > 0 && (
-                  <>
-                    <button onClick={handleUndoLastAction}>Annulla ultima azione</button>
-                    <button onClick={handleUndoAllActions}>Annulla tutto il turno</button>
-                  </>
                 )}
               </div>
 
-              {isMyTurn && turnDiscsTaken.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
-                  <span>In mano:</span>
-                  {remainingDiscs.map((c, i) => (
-                    <span
-                      key={i}
-                      onClick={() => handleSelectColor(c)}
-                      style={{
-                        display: 'inline-block',
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        background: DISC_HEX[c],
-                        cursor: 'pointer',
-                        outline: selectedColor === c ? '3px solid #333' : 'none',
-                        outlineOffset: 2
-                      }}
-                    />
-                  ))}
-                  {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
-                  <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
-                    Rinuncia alla presa
-                  </button>
-                  <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0}>
-                    Conferma turno
-                  </button>
+              <div style={{ margin: '6px 0 0' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <strong style={{ fontSize: '0.85rem', flexShrink: 0 }}>Carte Animale:</strong>
+                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+                    {game.animal_row.map((cardId) => {
+                      if (!cardId) return null
+                      const card = getAnimalCard(cardId)
+                      return (
+                        <div
+                          key={cardId}
+                          onClick={() => handleTakeAnimalCard(cardId)}
+                          style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
+                        >
+                          <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                          <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                          <HabitatIcon habitat={card.habitat} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {animalCardTurn && (
+                    <button onClick={handleUndoAnimalCard} style={{ flexShrink: 0, fontSize: '0.8rem' }}>
+                      {turnActions.some((a) => a.type === 'cube' && a.cardId === animalCardTurn.cardId)
+                        ? 'Annulla presa carta (+ cubi)'
+                        : 'Annulla presa carta'}
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              {error && <p style={{ color: 'red', margin: '4px 0 0', fontSize: '0.85rem' }}>{error}</p>}
+              {selectedCardForCube && (
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#d97706' }}>
+                  Cubo Animale selezionato ({getAnimalCard(selectedCardForCube.cardId).name}): clicca una casella
+                  gialla sulla plancia, oppure clicca di nuovo la carta per annullare.
+                </p>
               )}
-            </div>
+            </>
+          )}
+        </div>
 
-            <div style={{ margin: '6px 0 0' }}>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <strong style={{ fontSize: '0.85rem', flexShrink: 0 }}>Carte Animale:</strong>
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-                  {game.animal_row.map((cardId) => {
-                    if (!cardId) return null
-                    const card = getAnimalCard(cardId)
-                    return (
-                      <div
-                        key={cardId}
-                        onClick={() => handleTakeAnimalCard(cardId)}
-                        style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
-                      >
-                        <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                        <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
-                        <HabitatIcon habitat={card.habitat} />
-                      </div>
-                    )
-                  })}
-                </div>
-                {animalCardTurn && (
-                  <button onClick={handleUndoAnimalCard} style={{ flexShrink: 0, fontSize: '0.8rem' }}>
-                    {turnActions.some((a) => a.type === 'cube' && a.cardId === animalCardTurn.cardId)
-                      ? 'Annulla presa carta (+ cubi)'
-                      : 'Annulla presa carta'}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {error && <p style={{ color: 'red', margin: '4px 0 0', fontSize: '0.85rem' }}>{error}</p>}
-            {selectedCardForCube && (
-              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#d97706' }}>
-                Cubo Animale selezionato ({getAnimalCard(selectedCardForCube.cardId).name}): clicca una casella
-                gialla sulla plancia, oppure clicca di nuovo la carta per annullare.
-              </p>
-            )}
-          </>
+        {/* Colonna destra: riassunto punteggi, allineato in alto */}
+        {game.status === 'playing' && (
+          <div style={{ flexShrink: 0, width: 300 }}>
+            <ScoringReference boardMode={game.board_mode} />
+          </div>
         )}
       </div>
 
