@@ -129,7 +129,6 @@ export default function HabitatIcon({ habitat }) {
     return <div style={{ fontSize: 10, color: '#c00', width: 70 }}>pattern non disponibile</div>
   }
 
-  const hasFlexibleBase = habitat.some((c) => c.color === 'red')
   const positions = habitat.map((c) => ({ ...c, ...axialToPixel(c.dq, c.dr) }))
   const minX = Math.min(...positions.map((p) => p.x)) - SIZE
   const maxX = Math.max(...positions.map((p) => p.x)) + SIZE
@@ -149,7 +148,6 @@ export default function HabitatIcon({ habitat }) {
           </g>
         ))}
       </svg>
-      {hasFlexibleBase && <div style={{ fontSize: 9, color: '#999' }}>base: una qualsiasi delle tre</div>}
     </div>
   )
 }
