@@ -65,6 +65,13 @@ export function canPlaceDisc(playerBoard, q, r, color) {
     if (['brown', 'grey', 'red'].includes(top)) return { ok: true }
     return { ok: false, reason: 'Un Edificio richiede una base marrone, grigia o rossa' }
   }
+  if (color === 'brown') {
+    // Serve per preparare la base di un Albero alto 2 o 3 (pag. 7:
+    // "0, 1 o 2 dischi marroni" sotto il verde) — quindi il marrone
+    // deve poter impilarsi su altro marrone, non solo su vuoto.
+    if (stack.every((c) => c === 'brown')) return { ok: true }
+    return { ok: false, reason: 'Il marrone può poggiare solo su altro marrone' }
+  }
   // blue, yellow: mai impilabili
   return { ok: false, reason: `Un disco ${color} può essere collocato solo su una casella vuota` }
 }

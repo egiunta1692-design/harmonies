@@ -131,7 +131,7 @@ Le plance giocatore sono stampate su due lati (vedi foto fornita): lato "Standar
 Implementato: Alberi, Montagne (con regola di adiacenza), Campi, Edifici, Acqua (Fiume o Isole a seconda della modalità), carte Animale. Confidenza:
 
 - **Alta**: quali forme contano, come raggrupparle, condizioni di adiacenza — tutto testuale dal manuale.
-- **Media**: i valori numerici esatti di Alberi/Montagne (1/3/7 per altezza 1/2/3) e la tabella Fiume per lunghezza — ricostruiti dagli esempi del manuale, ma erano mostrati come badge in un'immagine, non in testo semplice. Se hai la pagina 8 del regolamento a portata di mano, un confronto rapido con le costanti in cima a `scoring.js` chiude ogni dubbio.
+- **Alta**: tutti i valori numerici (Alberi/Montagne 1/3/7, Campi e Edifici 5 fissi, tabella Fiume 0/2/5/8/11/15 +4/disco oltre il sesto, Isole 5 fisse) sono confermati da una scheda ufficiale "Tallying Points" fornita dall'utente — non più una ricostruzione dagli esempi del manuale.
 
 ## Problemi comuni
 

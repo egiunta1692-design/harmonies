@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import HexBoard from '../components/HexBoard'
 import HabitatIcon from '../components/HabitatIcon'
+import ScoringReference from '../components/ScoringReference'
 import {
   createEmptyPlayerBoard,
   takeDiscsFromCentralBoard,
@@ -66,6 +67,28 @@ function formatDuration(ms) {
   const mm = String(m).padStart(2, '0')
   const ss = String(s).padStart(2, '0')
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
+}
+
+// Genera un breve "bip" via Web Audio API — nessun file audio esterno
+// da caricare. Alcuni browser bloccano l'audio finché l'utente non ha
+// interagito con la pagina almeno una volta: in quel caso ignoriamo
+// l'errore silenziosamente, non è un problema bloccante.
+function playTurnChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.15, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4)
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.4)
+  } catch {
+    // browser che blocca l'audio senza interazione utente: nessun problema
+  }
 }
 
 export default function Game() {
@@ -165,11 +188,24 @@ export default function Game() {
     }
   }, [myPlayer?.id, myPlayer?.board_state, game?.board_mode])
 
-  if (!game || !myUserId) return <p>Caricamento partita...</p>
-
+  // Calcolato qui (con optional chaining, sicuro anche prima che "game"
+  // sia caricato) perché serve all'effetto sonoro qui sotto, che deve
+  // stare prima di qualsiasi return anticipato (Rules of Hooks).
   const isMyTurn =
-    game.status === 'playing' &&
-    game.turn_order?.[game.current_turn_index] === myPlayer?.id
+    game?.status === 'playing' && game?.turn_order?.[game.current_turn_index] === myPlayer?.id
+
+  // Suono di avviso quando diventa il tuo turno (transizione false -> true).
+  // Non riproduce nulla se il turno passa a un altro giocatore: ognuno
+  // sente il suono solo quando tocca a lui, non a ogni turno di chiunque.
+  const wasMyTurnRef = useRef(false)
+  useEffect(() => {
+    if (isMyTurn && !wasMyTurnRef.current) {
+      playTurnChime()
+    }
+    wasMyTurnRef.current = isMyTurn
+  }, [isMyTurn])
+
+  if (!game || !myUserId) return <p>Caricamento partita...</p>
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
   // momento (si aggiorna da solo se prendi una carta, via realtime).
@@ -463,6 +499,11 @@ export default function Game() {
               {game.started_at ? `Tempo: ${formatDuration(now - new Date(game.started_at).getTime())} · ` : ''}
               Turno: {game.turn_count || '—'}
             </span>
+          )}
+          {game.status === 'playing' && (
+            <div style={{ marginLeft: 'auto' }}>
+              <ScoringReference boardMode={game.board_mode} />
+            </div>
           )}
         </div>
 

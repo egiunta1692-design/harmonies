@@ -3,23 +3,15 @@ import { getAnimalCard } from './animalCards.js'
 
 // ============================================================
 // TABELLE DI PUNTEGGIO — pag. 8-9 del manuale.
-//
-// NOTA DI CONFIDENZA: le regole (quali forme contano, come si
-// raggruppa, condizioni di adiacenza) sono lette dal testo del
-// manuale e sono affidabili. I valori numerici esatti di Alberi/
-// Montagne (1/3/7) e del Fiume per lunghezza sono ricostruiti dagli
-// esempi del manuale con confidenza MEDIA — le cifre esatte erano
-// mostrate come piccoli badge in un'immagine, non in testo semplice.
-// Se hai la pagina 8 del regolamento sotto mano, un confronto rapido
-// con questi numeri toglie ogni dubbio: sono tutti raccolti qui sopra,
-// un'unica correzione se serve.
+// Valori confermati dalla scheda ufficiale "Tallying Points" fornita
+// dall'utente (alta confidenza per tutti i numeri qui sotto).
 // ============================================================
 
 const TREE_MOUNTAIN_POINTS = { 1: 1, 2: 3, 3: 7 }
 const FIELD_POINTS = 5
 const BUILDING_POINTS = 5
 const ISLAND_POINTS = 5
-const RIVER_POINTS = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 8, 6: 11 }
+const RIVER_POINTS = { 1: 0, 2: 2, 3: 5, 4: 8, 5: 11, 6: 15 }
 const RIVER_EXTRA_PER_DISC_BEYOND_6 = 4
 
 function getCell(board, q, r) {
