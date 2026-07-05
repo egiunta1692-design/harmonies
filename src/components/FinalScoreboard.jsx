@@ -37,7 +37,7 @@ export default function FinalScoreboard({ players, boardMode }) {
                   {isWinner && '🏆 '}
                   {r.nickname}
                 </td>
-                <td style={cellStyle}>{r.score.landscapeTotal}</td> 
+                <td style={cellStyle}>{r.score.landscapeTotal}</td>
                 <td style={cellStyle}>{r.score.animals}</td>
                 <td style={cellStyle}>{r.cubesPlaced}</td>
                 <td style={cellStyle}>{r.score.total}</td>
