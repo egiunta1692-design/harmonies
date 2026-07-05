@@ -20,6 +20,9 @@ create table if not exists games (
   turn_count int not null default 0,             -- contatore progressivo dei turni giocati
   started_at timestamptz,                        -- valorizzato quando la partita passa a "playing"
   board_mode text not null default 'standard',   -- 'standard' (Fiume) oppure 'isole'
+  final_round boolean not null default false,          -- pag. 7: è scattato l'ultimo giro?
+  final_round_reason text,                             -- 'plancia' oppure 'sacchetto'
+  final_round_trigger_player_id uuid,                   -- chi l'ha fatto scattare
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

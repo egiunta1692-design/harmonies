@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import HexBoard from '../components/HexBoard'
 import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
+import FinalScoreboard from '../components/FinalScoreboard'
 import {
   createEmptyPlayerBoard,
   takeDiscsFromCentralBoard,
@@ -113,13 +114,17 @@ export default function Game() {
   const [selectedCardForCube, setSelectedCardForCube] = useState(null)
 
   const [error, setError] = useState(null)
+  const [confirmingTurn, setConfirmingTurn] = useState(false)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
+  // Si ferma da solo a partita finita, così il tempo resta congelato
+  // al momento della fine invece di continuare a scorrere all'infinito.
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
+    if (game?.status === 'finished') return
     const interval = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [game?.status])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMyUserId(data.user?.id))
@@ -351,35 +356,76 @@ export default function Game() {
   async function handleConfirmTurn() {
     setError(null)
     if (!isMyTurn) return
+    if (confirmingTurn) return // già in corso: ignora un secondo click rapido
     if (turnDiscsTaken.length === 0) return setError('Devi prima prendere 3 dischi dalla plancia centrale')
     if (remainingDiscs.length > 0) return setError('Devi piazzare tutti i dischi prima di confermare')
 
-    await supabase.from('players').update({ board_state: currentBoard, animal_cards: currentHand }).eq('id', myPlayer.id)
-    await endTurn()
+    setConfirmingTurn(true)
+    try {
+      await supabase.from('players').update({ board_state: currentBoard, animal_cards: currentHand }).eq('id', myPlayer.id)
+      await endTurn()
 
-    setTakenSlotIndex(null)
-    setTurnDiscsTaken([])
-    setRemainingDiscs([])
-    setSelectedColor(null)
-    setTurnActions([])
-    setAnimalCardTurn(null)
-    setSelectedCardForCube(null)
+      setTakenSlotIndex(null)
+      setTurnDiscsTaken([])
+      setRemainingDiscs([])
+      setSelectedColor(null)
+      setTurnActions([])
+      setAnimalCardTurn(null)
+      setSelectedCardForCube(null)
+    } finally {
+      setConfirmingTurn(false)
+    }
   }
 
   async function endTurn() {
     const { data: freshGame } = await supabase.from('games').select().eq('id', game.id).single()
+
+    // Condizione 1 (pag. 7): il sacchetto è vuoto proprio quando serve
+    // rifornire la plancia centrale (anche una sola casella vuota basta).
+    const needsRefill = freshGame.central_board.some((slot) => slot.length === 0)
+    const bagEmptyAtRefill = needsRefill && freshGame.bag.length === 0
+
     const { centralBoard, bag } = refillCentralBoard(freshGame.central_board, freshGame.bag)
     const nextIndex = (freshGame.current_turn_index + 1) % freshGame.turn_order.length
 
-    await supabase
-      .from('games')
-      .update({
-        central_board: centralBoard,
-        bag,
-        current_turn_index: nextIndex,
-        turn_count: (freshGame.turn_count ?? 0) + 1
-      })
-      .eq('id', game.id)
+    const updates = {
+      central_board: centralBoard,
+      bag,
+      current_turn_index: nextIndex,
+      turn_count: (freshGame.turn_count ?? 0) + 1
+    }
+
+    // L'ultimo giro scatta una sola volta: se è già attivo non lo si
+    // "ri-attiva" con un motivo diverso.
+    let finalRoundActive = freshGame.final_round
+    let triggerPlayerId = freshGame.final_round_trigger_player_id
+
+    if (!finalRoundActive) {
+      // Condizione 2 (pag. 7): alla fine del TUO turno, la tua plancia
+      // ha 2 caselle o meno non occupate.
+      const emptyCells = Object.values(currentBoard.cells).filter((c) => c.discs.length === 0).length
+
+      if (emptyCells <= 2 || bagEmptyAtRefill) {
+        finalRoundActive = true
+        triggerPlayerId = myPlayer.id
+        updates.final_round = true
+        updates.final_round_reason = emptyCells <= 2 ? 'plancia' : 'sacchetto'
+        updates.final_round_trigger_player_id = myPlayer.id
+      }
+    }
+
+    // Il giro finale è completo (tutti hanno giocato lo stesso numero di
+    // turni) quando il prossimo turno tornerebbe a chi l'ha fatto
+    // scattare: a quel punto la partita finisce, quel giocatore non
+    // gioca un turno in più.
+    if (finalRoundActive && triggerPlayerId) {
+      const triggerIndex = freshGame.turn_order.indexOf(triggerPlayerId)
+      if (nextIndex === triggerIndex) {
+        updates.status = 'finished'
+      }
+    }
+
+    await supabase.from('games').update(updates).eq('id', game.id)
   }
 
   // --- Carte Animale ---
@@ -509,13 +555,34 @@ export default function Game() {
             <span style={{ color: '#666', fontSize: '0.85rem' }}>
               Modalità: {game.board_mode === 'isole' ? 'Isole' : 'Standard (Fiume)'}
             </span>
-            {game.status === 'playing' && (
+            {(game.status === 'playing' || game.status === 'finished') && (
               <span style={{ color: '#666', fontSize: '0.85rem' }}>
                 {game.started_at ? `Tempo: ${formatDuration(now - new Date(game.started_at).getTime())} · ` : ''}
                 Turno: {game.turn_count || '—'}
               </span>
             )}
           </div>
+
+          {game.status === 'playing' && game.final_round && (
+            <p
+              style={{
+                margin: '6px 0 0',
+                padding: '4px 10px',
+                background: '#fef3c7',
+                border: '1px solid #d97706',
+                borderRadius: 6,
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                display: 'inline-block'
+              }}
+            >
+              ⚠️ Ultimo giro! (
+              {game.final_round_reason === 'sacchetto'
+                ? 'il sacchetto dei dischi è vuoto'
+                : 'una plancia ha 2 o meno caselle libere'}
+              ) — la partita finisce quando tutti avranno giocato lo stesso numero di turni.
+            </p>
+          )}
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '6px 0' }}>
             {players.map((p) => {
@@ -541,6 +608,8 @@ export default function Game() {
           {game.status === 'waiting' && (
             <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
           )}
+
+          {game.status === 'finished' && <FinalScoreboard players={players} boardMode={game.board_mode} />}
 
           {game.status === 'playing' && (
             <>
@@ -601,8 +670,8 @@ export default function Game() {
                     <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
                       Rinuncia alla presa
                     </button>
-                    <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0}>
-                      Conferma turno
+                    <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
+                      {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
                     </button>
                   </div>
                 )}
@@ -657,7 +726,7 @@ export default function Game() {
         )}
       </div>
 
-      {game.status === 'playing' && (
+      {(game.status === 'playing' || game.status === 'finished') && (
         <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16 }}>
           {/* Pannello sinistro: il giocatore loggato */}
           <div style={{ ...panelStyle, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>

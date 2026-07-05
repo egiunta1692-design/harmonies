@@ -115,6 +115,8 @@ Se tutto funziona, vedrai la stessa `room_code` e la lista giocatori aggiornarsi
 - **Alta**: le 9 coppie a 2 tessere (Coccinelle, Rane, Suricati, Koala, Anatre, Pipistrelli, Pesci, Facoceri, Falchi) e Corvi (confermato anche da una foto della carta reale, non solo dalla scheda riassuntiva).
 - **Media**: le restanti 22 carte (catene a 3 tessere e cluster a triangolo). Colori e posizione del cubo letti con buona sicurezza dalla foto ad alta risoluzione; la forma esatta (fila dritta vs triangolo) resta un giudizio visivo da un'icona piccola. Se in gioco una carta non si forma mai pur avendo la disposizione giusta sul tavolo, segnalala e la correggo — è una modifica isolata in `src/game-engine/animalCards.js`.
 
+- **Fine partita automatica**: quando il giro finale (vedi sopra) si completa — cioè torna il turno di chi l'ha fatto scattare — la partita passa da sola a `finished`. A quel punto compare una **classifica finale automatica** al posto dei controlli di turno, con il punteggio di ognuno calcolato dal motore (`scorePlayerBoard`): Paesaggio, Animali, Totale, con lo spareggio sui cubi Animale piazzati previsto dal regolamento (parità persistente = vittoria condivisa). Le plance restano visibili in sola lettura per rivedere la partita.
+
 ## Cosa manca ancora (prossimi step)
 
 - Validazione server-side (Edge Function) — per ora il client scrive direttamente su Postgres.
