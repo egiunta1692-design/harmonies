@@ -34,10 +34,17 @@ const DISC_HEX = {
 function rebuildBoardDraft(baseBoard, actions) {
   let board = baseBoard
   for (const action of actions) {
-    board =
-      action.type === 'disc'
-        ? placeDisc(board, action.q, action.r, action.color)
-        : placeAnimalCube(board, action.q, action.r, action.cardId)
+    try {
+      board =
+        action.type === 'disc'
+          ? placeDisc(board, action.q, action.r, action.color)
+          : placeAnimalCube(board, action.q, action.r, action.cardId)
+    } catch {
+      // Difesa contro una finestra di realtime già chiusa altrove (vedi
+      // handleConfirmTurn): se per qualche motivo imprevisto un'azione
+      // risultasse già applicata alla plancia base, la ignoriamo invece
+      // di far crashare il render con un errore non gestito.
+    }
   }
   return board
 }
@@ -363,8 +370,14 @@ export default function Game() {
     setConfirmingTurn(true)
     try {
       await supabase.from('players').update({ board_state: currentBoard, animal_cards: currentHand }).eq('id', myPlayer.id)
-      await endTurn()
 
+      // Azzero lo stato locale QUI, prima di endTurn (che fa altre
+      // chiamate asincrone al server). La plancia appena salvata è già
+      // quella corretta e completa: se aspettassi la fine di endTurn per
+      // azzerare turnActions, un aggiornamento realtime della plancia
+      // potrebbe arrivare nel frattempo e la interfaccia riapplicherebbe
+      // le stesse mosse sopra una plancia che le ha già (bug osservato:
+      // "casella non vuota" o "altezza massima" su mosse in realtà corrette).
       setTakenSlotIndex(null)
       setTurnDiscsTaken([])
       setRemainingDiscs([])
@@ -372,6 +385,8 @@ export default function Game() {
       setTurnActions([])
       setAnimalCardTurn(null)
       setSelectedCardForCube(null)
+
+      await endTurn()
     } finally {
       setConfirmingTurn(false)
     }
@@ -719,7 +734,7 @@ export default function Game() {
         </div>
 
         {/* Colonna destra: riassunto punteggi, allineato in alto */}
-        {game.status === 'playing' && (
+        {(game.status === 'playing' || game.status === 'finished') && (
           <div style={{ flexShrink: 0, width: 300 }}>
             <ScoringReference boardMode={game.board_mode} />
           </div>
