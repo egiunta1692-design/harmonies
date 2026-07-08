@@ -245,6 +245,14 @@ export default function Game() {
   const myActiveCards = currentHand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length)
   const hasPlacedDiscThisTurn = turnActions.some((a) => a.type === 'disc')
 
+  // Conta le carte Animale attive di un qualsiasi giocatore: per me
+  // stesso uso currentHand (include le mosse di questo turno non ancora
+  // confermate), per gli avversari i dati committati che ho via realtime.
+  function activeCardCount(p) {
+    const hand = p.id === myPlayer?.id ? currentHand : p.animal_cards ?? []
+    return hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
+  }
+
   async function handleStartGame() {
     const turnOrder = players.map((p) => p.id)
     await supabase
@@ -627,6 +635,9 @@ export default function Game() {
                 <div
                   key={p.id}
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
                     padding: isCurrent ? '6px 16px' : '3px 10px',
                     borderRadius: 999,
                     background: isCurrent ? '#fef3c7' : '#f1efe8',
@@ -635,7 +646,12 @@ export default function Game() {
                     fontSize: isCurrent ? '1.1rem' : '0.85rem'
                   }}
                 >
-                  {p.nickname}
+                  <span>{p.nickname}</span>
+                  {game.status === 'playing' && (
+                    <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#666' }}>
+                      🎴{activeCardCount(p)}/4
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -651,7 +667,6 @@ export default function Game() {
             <>
               <div style={{ fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <strong>Plancia centrale:</strong>
                   {game.central_board.map((slot, i) => (
                     <div
                       key={i}
@@ -710,7 +725,6 @@ export default function Game() {
 
               <div style={{ margin: '6px 0 0' }}>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <strong style={{ fontSize: '0.85rem', flexShrink: 0 }}>Carte Animale:</strong>
                   <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
                     {game.animal_row.map((cardId) => {
                       if (!cardId) return null
@@ -761,11 +775,9 @@ export default function Game() {
         <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16 }}>
           {/* Pannello sinistro: il giocatore loggato */}
           <div style={{ ...panelStyle, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <h2 style={{ fontSize: '1.3rem', margin: 0 }}>{myPlayer?.nickname}</h2>
-            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#666' }}>La tua plancia</p>
-            <p style={{ margin: '0 0 8px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-              Le tue carte ({myActiveCards.length}/4 attive)
-            </p>
+            <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
+              {myPlayer?.nickname} <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
+            </h2>
 
             <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 12 }}>
               {/* Griglia carte, a sinistra: scorre in verticale se non entrano */}
@@ -828,7 +840,6 @@ export default function Game() {
           {/* Pannello destro: gli avversari, plancia a sinistra e nome+carte a destra per ognuno */}
           {otherPlayers.length > 0 && (
             <div style={{ ...panelStyle, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <h2 style={{ fontSize: '1.3rem', margin: '0 0 6px' }}>Plance degli altri giocatori</h2>
               <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {otherPlayers.map((p) => (
                   <div key={p.id} style={{ display: 'flex', gap: 12 }}>
@@ -836,7 +847,9 @@ export default function Game() {
                       <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ margin: '0 0 4px', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.nickname}</p>
+                      <p style={{ margin: '0 0 4px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        {p.nickname} <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
+                      </p>
                       <div
                         style={{
                           maxHeight: '22vh',
