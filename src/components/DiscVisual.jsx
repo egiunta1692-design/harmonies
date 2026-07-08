@@ -36,16 +36,10 @@ export function DiscCylinder({ cx, capY, color, fill, discW, capRy, sideH }) {
 
   return (
     <g>
-      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} />
-      <rect
-        x={cx - discW / 2}
-        y={capY}
-        width={discW}
-        height={sideH}
-        fill={base}
-        stroke="rgba(0,0,0,0.25)"
-        strokeWidth={0.5}
-      />
+      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <rect x={cx - discW / 2} y={capY} width={discW} height={sideH} fill={base} />
+      <line x1={cx - discW / 2} y1={capY} x2={cx - discW / 2} y2={bodyBottomY} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <line x1={cx + discW / 2} y1={capY} x2={cx + discW / 2} y2={bodyBottomY} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
       <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill={light} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
     </g>
   )

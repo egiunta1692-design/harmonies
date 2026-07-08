@@ -4,10 +4,10 @@ import { DiscStackVisual } from './DiscVisual'
 // plancia centrale) con lo stesso stile cilindrico 3D della plancia
 // giocatore, in un piccolo SVG autonomo con l'ingombro già calcolato.
 export default function CentralDiscPile({ discs }) {
-  const discW = 24
-  const capRy = 5
-  const sideH = 7
-  const advance = 8
+  const discW = 40
+  const capRy = 8
+  const sideH = 12
+  const advance = 13
 
   const width = discW + 8
   const height = discs.length > 0 ? (discs.length - 1) * advance + sideH + capRy * 2 + 4 : discW

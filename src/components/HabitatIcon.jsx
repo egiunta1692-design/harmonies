@@ -76,22 +76,25 @@ function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
         </clipPath>
       </defs>
 
-      {/* bordo inferiore, diviso in 3 fasce */}
+      {/* bordo inferiore, diviso in 3 fasce, con contorno curvo */}
       <g clipPath={`url(#${clipBottomId})`}>
         {bandColors.map((c, i) => (
           <rect key={c} x={cx - discW / 2 + i * bandW} y={bodyBottomY - capRy} width={bandW} height={capRy * 2} fill={DISC_HEX[c]} />
         ))}
       </g>
+      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
 
-      {/* fianco, diviso in 3 fasce, con contorno */}
+      {/* fianco, diviso in 3 fasce: solo linee verticali (bordi e divisori), niente riga piatta in alto/basso */}
       {bandColors.map((c, i) => (
-        <rect
-          key={c}
-          x={cx - discW / 2 + i * bandW}
-          y={capY}
-          width={bandW}
-          height={sideH}
-          fill={DISC_HEX[c]}
+        <rect key={c} x={cx - discW / 2 + i * bandW} y={capY} width={bandW} height={sideH} fill={DISC_HEX[c]} />
+      ))}
+      {[0, 1, 2, 3].map((i) => (
+        <line
+          key={i}
+          x1={cx - discW / 2 + i * bandW}
+          y1={capY}
+          x2={cx - discW / 2 + i * bandW}
+          y2={bodyBottomY}
           stroke="rgba(0,0,0,0.25)"
           strokeWidth={0.5}
         />
