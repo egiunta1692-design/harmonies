@@ -26,34 +26,63 @@ function hexPoints(cx, cy, size) {
   return pts.join(' ')
 }
 
-// Disegna la pila di dischi di una casella come piccole barre orizzontali
-// impilate: la barra più in basso è il disco[0] (il primo posato), quella
-// più in alto è l'ultimo. Riproduce visivamente "ordine e tipo" richiesti,
-// invece del solo colore in cima.
+// Schiarisce (percent positivo) o scurisce (percent negativo) un colore
+// esadecimale — serve per dare al disco un corpo in ombra e una faccia
+// superiore lucida, senza dover definire manualmente due tinte per colore.
+function shade(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16)
+  const clamp = (v) => Math.max(0, Math.min(255, v))
+  const r = clamp((num >> 16) + Math.round(255 * percent))
+  const g = clamp(((num >> 8) & 0xff) + Math.round(255 * percent))
+  const b = clamp((num & 0xff) + Math.round(255 * percent))
+  return `rgb(${r},${g},${b})`
+}
+
+// Disegna la pila di dischi di una casella come piccoli dischi 3D
+// impilati: ognuno ha un corpo cilindrico (colore scurito) e una faccia
+// superiore ellittica lucida (colore schiarito), stesso colore del
+// disco reale. Il disco più in basso è discs[0] (il primo posato),
+// quello più in alto è l'ultimo — riproduce ordine e tipo, non solo il
+// colore in cima.
 function DiscStack({ cx, cy, discs, scale = 1 }) {
   if (discs.length === 0) return null
-  const barW = 22 * scale
-  const barH = 8 * scale
+  const discW = 22 * scale
+  const discH = 11 * scale
+  const capH = discH * 0.6
   const gap = 2 * scale
-  const totalH = discs.length * barH + (discs.length - 1) * gap
-  const bottomY = cy + totalH / 2 - barH
+  const totalH = discs.length * discH + (discs.length - 1) * gap
+  const bottomY = cy + totalH / 2 - discH
 
   return (
     <>
       {discs.map((color, i) => {
-        const y = bottomY - i * (barH + gap)
+        const y = bottomY - i * (discH + gap)
+        const base = DISC_HEX[color]
+        const light = shade(base, 0.32)
+        const dark = shade(base, -0.18)
+        const bodyH = discH - capH * 0.4
         return (
-          <rect
-            key={i}
-            x={cx - barW / 2}
-            y={y}
-            width={barW}
-            height={barH}
-            rx={2}
-            fill={DISC_HEX[color]}
-            stroke="rgba(0,0,0,0.25)"
-            strokeWidth={0.5}
-          />
+          <g key={i}>
+            <rect
+              x={cx - discW / 2}
+              y={y + capH * 0.4}
+              width={discW}
+              height={bodyH}
+              rx={bodyH / 2}
+              fill={dark}
+              stroke="rgba(0,0,0,0.2)"
+              strokeWidth={0.4}
+            />
+            <ellipse
+              cx={cx}
+              cy={y + capH / 2}
+              rx={discW / 2}
+              ry={capH / 2}
+              fill={light}
+              stroke="rgba(0,0,0,0.2)"
+              strokeWidth={0.4}
+            />
+          </g>
         )
       })}
     </>
