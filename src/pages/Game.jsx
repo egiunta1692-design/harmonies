@@ -248,6 +248,16 @@ export default function Game() {
   // Conta le carte Animale attive di un qualsiasi giocatore: per me
   // stesso uso currentHand (include le mosse di questo turno non ancora
   // confermate), per gli avversari i dati committati che ho via realtime.
+  // Cubi Animale usciti dalla riserva (66 in totale, pag. 2 del manuale):
+  // per regolamento (pag. 5) si prendono TUTTI i cubi di una carta appena
+  // la si prende, non uno alla volta man mano che li si piazza sul
+  // paesaggio — quindi conta card.points.length per ogni carta in mano
+  // a chiunque, indipendentemente da cubesPlaced.
+  const cubesUsed = players.reduce(
+    (sum, p) => sum + (p.animal_cards ?? []).reduce((s, c) => s + getAnimalCard(c.cardId).points.length, 0),
+    0
+  )
+
   function activeCardCount(p) {
     const hand = p.id === myPlayer?.id ? currentHand : p.animal_cards ?? []
     return hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
@@ -575,6 +585,15 @@ export default function Game() {
     flexShrink: 0
   })
 
+  const turnBadgeStyle = (isCurrent) => ({
+    display: 'inline-block',
+    padding: isCurrent ? '4px 12px' : '1px 6px',
+    borderRadius: 999,
+    background: isCurrent ? '#fef3c7' : 'transparent',
+    border: isCurrent ? '2px solid #d97706' : '1px solid transparent',
+    fontWeight: isCurrent ? 'bold' : 'normal'
+  })
+
   const panelStyle = { border: '1px solid #333', borderRadius: 8, padding: '10px 14px', boxSizing: 'border-box' }
 
   return (
@@ -629,33 +648,34 @@ export default function Game() {
           )}
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '6px 0' }}>
-            {players.map((p) => {
-              const isCurrent = game.status === 'playing' && game.turn_order?.[game.current_turn_index] === p.id
-              return (
-                <div
-                  key={p.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: isCurrent ? '6px 16px' : '3px 10px',
-                    borderRadius: 999,
-                    background: isCurrent ? '#fef3c7' : '#f1efe8',
-                    border: isCurrent ? '2px solid #d97706' : '1px solid #ccc',
-                    fontWeight: isCurrent ? 'bold' : 'normal',
-                    fontSize: isCurrent ? '1.1rem' : '0.85rem'
-                  }}
-                >
-                  <span>{p.nickname}</span>
-                  {game.status === 'playing' && (
-                    <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#666' }}>
-                      🎴{activeCardCount(p)}/4
-                    </span>
-                  )}
-                </div>
-              )
-            })}
+            {players.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  background: '#f1efe8',
+                  border: '1px solid #ccc',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <span>{p.nickname}</span>
+                {game.status === 'playing' && (
+                  <span style={{ fontSize: '0.8em', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
+                )}
+              </div>
+            ))}
           </div>
+
+          {game.status === 'playing' && (
+            <p style={{ margin: '0 0 6px', fontSize: '0.8rem', color: '#666' }}>
+              🎒 Sacchetto: {game.bag.length} dischi · 🐾 Mazzo Animali: {game.animal_deck.length} carte da
+              scoprire · 🧊 Cubi Animale: {66 - cubesUsed}/66 rimasti
+            </p>
+          )}
 
           {game.status === 'waiting' && (
             <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
@@ -776,7 +796,8 @@ export default function Game() {
           {/* Pannello sinistro: il giocatore loggato */}
           <div style={{ ...panelStyle, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
-              {myPlayer?.nickname} <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
+              <span style={turnBadgeStyle(isMyTurn)}>{myPlayer?.nickname}</span>{' '}
+              <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
             </h2>
 
             <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 12 }}>
@@ -847,8 +868,9 @@ export default function Game() {
                       <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ margin: '0 0 4px', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                        {p.nickname} <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
+                      <p style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>
+                        <span style={turnBadgeStyle(game.turn_order?.[game.current_turn_index] === p.id)}>{p.nickname}</span>{' '}
+                        <span style={{ fontSize: '0.8em', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
                       </p>
                       <div
                         style={{
