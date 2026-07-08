@@ -49,6 +49,7 @@ const DISC_W = 16
 const CAP_RY = 3.2
 const SIDE_H = 4.5
 const ADVANCE = 5
+const CUBE_SIZE = 7 // stesso rapporto discW/cubeSize usato sulla plancia
 
 let clipIdCounter = 0
 
@@ -127,7 +128,15 @@ function CellStack({ cx, cy, stack, hasCube }) {
         )
       })}
       {hasCube && (
-        <circle cx={cx + SIZE * 0.5} cy={cy - SIZE * 0.5} r={4} fill={CUBE_COLOR} stroke="#fff" strokeWidth={1} />
+        <rect
+          x={cx - CUBE_SIZE / 2}
+          y={topCapY - CUBE_SIZE - CAP_RY * 0.2}
+          width={CUBE_SIZE}
+          height={CUBE_SIZE}
+          fill={CUBE_COLOR}
+          stroke={DISC_STROKE}
+          strokeWidth={DISC_STROKE_WIDTH}
+        />
       )}
     </>
   )
@@ -143,7 +152,7 @@ export default function HabitatIcon({ habitat }) {
   const positions = habitat.map((c) => ({ ...c, ...axialToPixel(c.dq, c.dr) }))
   const minX = Math.min(...positions.map((p) => p.x)) - SIZE
   const maxX = Math.max(...positions.map((p) => p.x)) + SIZE
-  const minY = Math.min(...positions.map((p) => p.y)) - SIZE * 1.6
+  const minY = Math.min(...positions.map((p) => p.y)) - SIZE * 1.9
   const maxY = Math.max(...positions.map((p) => p.y)) + SIZE
 
   return (

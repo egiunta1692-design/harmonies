@@ -90,7 +90,7 @@ export default function HexBoard({
             {cell.animalCube && (
               <rect
                 x={x - cubeSize / 2}
-                y={topCapY - capRy - cubeSize - 3 * s}
+                y={topCapY - cubeSize - capRy * 0.2}
                 width={cubeSize}
                 height={cubeSize}
                 fill="#F59E0B"
