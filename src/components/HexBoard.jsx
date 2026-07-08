@@ -1,11 +1,4 @@
-const DISC_HEX = {
-  grey: '#9CA3AF',
-  blue: '#60A5FA',
-  brown: '#92400E',
-  green: '#16A34A',
-  yellow: '#FACC15',
-  red: '#DC2626'
-}
+import { DiscStackVisual } from './DiscVisual'
 
 const HEX_SIZE = 32
 
@@ -24,59 +17,6 @@ function hexPoints(cx, cy, size) {
     pts.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`)
   }
   return pts.join(' ')
-}
-
-// Interpola un colore verso il bianco o il nero in proporzione (non in
-// modo additivo): così un colore già chiaro come il grigio non sfonda
-// verso il bianco quando lo si schiarisce per la faccia superiore.
-function mix(hex, target, ratio) {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const r = (num >> 16) & 0xff
-  const g = (num >> 8) & 0xff
-  const b = num & 0xff
-  const nr = Math.round(r + (target[0] - r) * ratio)
-  const ng = Math.round(g + (target[1] - g) * ratio)
-  const nb = Math.round(b + (target[2] - b) * ratio)
-  return `rgb(${nr},${ng},${nb})`
-}
-const lighten = (hex, ratio) => mix(hex, [255, 255, 255], ratio)
-
-// Disegna la pila di dischi di una casella come veri cilindri 3D
-// impilati (faccia superiore ellittica lucida, fianco dritto, bordo
-// inferiore in ombra), parzialmente sovrapposti l'uno sull'altro come
-// nel gioco fisico. Il disco più in basso è discs[0] (il primo posato),
-// quello più in alto è l'ultimo.
-function DiscStack({ cx, cy, discs, scale = 1 }) {
-  if (discs.length === 0) return null
-  const discW = 24 * scale
-  const capRy = 5 * scale // raggio verticale della faccia ellittica
-  const sideH = 7 * scale // altezza del fianco cilindrico
-  const advance = 8 * scale // avanzamento verticale tra un disco e il successivo (< sideH+capRy*2: crea la sovrapposizione)
-  const n = discs.length
-  const totalH = (n - 1) * advance + sideH + capRy * 2
-  const topCapY = cy - totalH / 2 + capRy
-
-  return (
-    <>
-      {discs.map((color, i) => {
-        const capY = topCapY + (n - 1 - i) * advance
-        const bodyBottomY = capY + sideH
-        const base = DISC_HEX[color]
-        const light = lighten(base, 0.28)
-
-        return (
-          <g key={i}>
-            {/* bordo inferiore, stesso colore del fianco */}
-            <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} />
-            {/* fianco cilindrico */}
-            <rect x={cx - discW / 2} y={capY} width={discW} height={sideH} fill={base} />
-            {/* faccia superiore, lucida */}
-            <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill={light} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
-          </g>
-        )
-      })}
-    </>
-  )
 }
 
 // boardState: { side, cells: { "q,r": { discs: [...], animalCube } } }
@@ -139,7 +79,15 @@ export default function HexBoard({
               stroke={isHighlighted ? '#d97706' : highlightable ? '#333' : '#ccc'}
               strokeWidth={isHighlighted ? 2 : 1}
             />
-            <DiscStack cx={x} cy={y} discs={cell.discs} scale={compact ? 0.8 : 1} />
+            <DiscStackVisual
+              cx={x}
+              cy={y}
+              discs={cell.discs}
+              discW={24 * (compact ? 0.8 : 1)}
+              capRy={5 * (compact ? 0.8 : 1)}
+              sideH={7 * (compact ? 0.8 : 1)}
+              advance={8 * (compact ? 0.8 : 1)}
+            />
             {cell.animalCube && (
               <circle
                 cx={x + size * 0.55}

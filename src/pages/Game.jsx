@@ -5,6 +5,8 @@ import HexBoard from '../components/HexBoard'
 import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
+import CentralDiscPile from '../components/CentralDiscPile'
+import { DISC_HEX } from '../components/DiscVisual'
 import {
   createEmptyPlayerBoard,
   takeDiscsFromCentralBoard,
@@ -15,15 +17,6 @@ import {
   findHabitatMatches,
   placeAnimalCube
 } from '../game-engine'
-
-const DISC_HEX = {
-  grey: '#9CA3AF',
-  blue: '#60A5FA',
-  brown: '#92400E',
-  green: '#16A34A',
-  yellow: '#FACC15',
-  red: '#DC2626'
-}
 
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
 // azioni (dischi E cubi) fatte in questo turno sopra la plancia
@@ -217,6 +210,28 @@ export default function Game() {
     wasMyTurnRef.current = isMyTurn
   }, [isMyTurn])
 
+  // Se dopo un refresh trovo dischi presi ma non ancora confermati (pag.
+  // 4: "presi" e "piazzati" sono azioni separate, il tempo in mezzo non
+  // è mai stato salvato da nessuna parte prima d'ora), li recupero qui.
+  // Eventuali piazzamenti fatti prima del refresh sono persi (turnActions
+  // non viene salvato in tempo reale), ma i DISCHI restano disponibili
+  // per essere ripiazzati — prima del fix sparivano del tutto.
+  const restoredPendingTakeRef = useRef(false)
+  useEffect(() => {
+    if (restoredPendingTakeRef.current) return
+    if (!myPlayer || !isMyTurn) return
+    if (takenSlotIndex !== null || turnDiscsTaken.length > 0) return // stato locale già inizializzato
+
+    if (myPlayer.pending_take) {
+      const { slotIndex, discs } = myPlayer.pending_take
+      setTakenSlotIndex(slotIndex)
+      setTurnDiscsTaken(discs)
+      setRemainingDiscs(discs)
+      setSelectedColor(discs[0] ?? null)
+    }
+    restoredPendingTakeRef.current = true
+  }, [myPlayer, isMyTurn, takenSlotIndex, turnDiscsTaken.length])
+
   if (!game || !myUserId) return <p>Caricamento partita...</p>
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
@@ -266,6 +281,7 @@ export default function Game() {
         setSelectedColor(discs[0])
         setSelectedCardForCube(null)
         await supabase.from('games').update({ central_board: centralBoard }).eq('id', game.id)
+        await supabase.from('players').update({ pending_take: { slotIndex, discs } }).eq('id', myPlayer.id)
       } catch (err) {
         setError(err.message)
       }
@@ -280,6 +296,7 @@ export default function Game() {
       setSelectedColor(discs[0])
       setSelectedCardForCube(null)
       await supabase.from('games').update({ central_board: centralBoard }).eq('id', game.id)
+      await supabase.from('players').update({ pending_take: { slotIndex, discs } }).eq('id', myPlayer.id)
     } catch (err) {
       setError(err.message)
     }
@@ -293,6 +310,7 @@ export default function Game() {
 
     const restored = game.central_board.map((slot, i) => (i === takenSlotIndex ? turnDiscsTaken : slot))
     await supabase.from('games').update({ central_board: restored }).eq('id', game.id)
+    await supabase.from('players').update({ pending_take: null }).eq('id', myPlayer.id)
 
     setTakenSlotIndex(null)
     setTurnDiscsTaken([])
@@ -369,7 +387,10 @@ export default function Game() {
 
     setConfirmingTurn(true)
     try {
-      await supabase.from('players').update({ board_state: currentBoard, animal_cards: currentHand }).eq('id', myPlayer.id)
+      await supabase
+        .from('players')
+        .update({ board_state: currentBoard, animal_cards: currentHand, pending_take: null })
+        .eq('id', myPlayer.id)
 
       // Azzero lo stato locale QUI, prima di endTurn (che fa altre
       // chiamate asincrone al server). La plancia appena salvata è già
@@ -637,20 +658,15 @@ export default function Game() {
                       onClick={() => handleTakeSlot(i)}
                       style={{
                         display: 'flex',
-                        gap: 3,
-                        padding: 5,
+                        alignItems: 'center',
+                        padding: 4,
                         border: i === takenSlotIndex ? '2px solid #333' : '1px solid #ccc',
                         borderRadius: 6,
                         cursor: isMyTurn ? 'pointer' : 'default',
                         opacity: slot.length === 0 ? 0.3 : 1
                       }}
                     >
-                      {slot.map((color, j) => (
-                        <span
-                          key={j}
-                          style={{ width: 14, height: 14, borderRadius: '50%', background: DISC_HEX[color] }}
-                        />
-                      ))}
+                      <CentralDiscPile discs={slot} />
                     </div>
                   ))}
 

@@ -1,15 +1,4 @@
-const DISC_HEX = {
-  grey: '#9CA3AF',
-  blue: '#60A5FA',
-  brown: '#92400E',
-  green: '#16A34A',
-  yellow: '#FACC15',
-  red: '#DC2626',
-  // Pseudo-colore per la base di un Edificio: il regolamento (pag. 8)
-  // permette marrone, grigio O rosso indifferentemente, quindi non
-  // possiamo disegnare un colore specifico — usiamo un tono neutro.
-  base: '#D9D2C3'
-}
+import { DiscCylinder } from './DiscVisual'
 
 export const CUBE_COLOR = '#F59E0B' // ambra, distinto dal rosso dei dischi
 
@@ -56,63 +45,43 @@ function stackForSpec(spec) {
   return [spec.color]
 }
 
+const DISC_W = 16
+const CAP_RY = 3.2
+const SIDE_H = 4.5
+const ADVANCE = 5
+
+// La base ambigua di un Edificio non è un colore singolo: il regolamento
+// permette marrone, grigio O rosso indifferentemente. Invece di
+// inventare un colore, mostriamo le 3 opzioni reali come mini-cilindri
+// affiancati, con lo stesso stile 3D degli altri dischi.
+function BaseOptionsCylinders({ cx, capY }) {
+  const options = ['brown', 'grey', 'red']
+  const miniW = DISC_W / 3 - 0.6
+  return (
+    <>
+      {options.map((color, i) => {
+        const miniCx = cx - DISC_W / 2 + miniW / 2 + i * (DISC_W / 3)
+        return (
+          <DiscCylinder key={color} cx={miniCx} capY={capY} color={color} discW={miniW} capRy={CAP_RY * 0.85} sideH={SIDE_H} />
+        )
+      })}
+    </>
+  )
+}
+
 function CellStack({ cx, cy, stack, hasCube }) {
-  const barW = 14
-  const barH = 6
-  const gap = 1
-  const totalH = stack.length * barH + (stack.length - 1) * gap
-  const bottomY = cy + totalH / 2 - barH
+  const n = stack.length
+  const totalH = (n - 1) * ADVANCE + SIDE_H + CAP_RY * 2
+  const topCapY = cy - totalH / 2 + CAP_RY
 
   return (
     <>
       {stack.map((color, i) => {
-        const y = bottomY - i * (barH + gap)
-
-        // La base di un Edificio non è un colore singolo: il regolamento
-        // permette marrone, grigio O rosso indifferentemente. Invece di
-        // un colore ambiguo, mostriamo le 3 opzioni reali affiancate.
-        if (color === 'base') {
-          const chipW = barW / 3
-          return (
-            <g key={i}>
-              {['brown', 'grey', 'red'].map((opt, j) => (
-                <rect
-                  key={opt}
-                  x={cx - barW / 2 + j * chipW}
-                  y={y}
-                  width={chipW}
-                  height={barH}
-                  fill={DISC_HEX[opt]}
-                  stroke="rgba(255,255,255,0.6)"
-                  strokeWidth={0.5}
-                />
-              ))}
-              <rect
-                x={cx - barW / 2}
-                y={y}
-                width={barW}
-                height={barH}
-                rx={1.5}
-                fill="none"
-                stroke="rgba(0,0,0,0.25)"
-                strokeWidth={0.5}
-              />
-            </g>
-          )
-        }
-
-        return (
-          <rect
-            key={i}
-            x={cx - barW / 2}
-            y={y}
-            width={barW}
-            height={barH}
-            rx={1.5}
-            fill={DISC_HEX[color]}
-            stroke="rgba(0,0,0,0.25)"
-            strokeWidth={0.5}
-          />
+        const capY = topCapY + (n - 1 - i) * ADVANCE
+        return color === 'base' ? (
+          <BaseOptionsCylinders key={i} cx={cx} capY={capY} />
+        ) : (
+          <DiscCylinder key={i} cx={cx} capY={capY} color={color} discW={DISC_W} capRy={CAP_RY} sideH={SIDE_H} />
         )
       })}
       {hasCube && (

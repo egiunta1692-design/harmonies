@@ -38,6 +38,7 @@ create table if not exists players (
   board_state jsonb not null default '{}'::jsonb,  -- griglia esagonale con i dischi piazzati
   animal_cards jsonb not null default '[]'::jsonb, -- carte in mano + cubi rimasti da piazzare
   nature_spirit_card jsonb,                        -- opzionale, fase avanzata
+  pending_take jsonb,                               -- { slotIndex, discs } se hai preso dischi non ancora confermati (sopravvive a un refresh)
   score int,
   joined_at timestamptz not null default now(),
   unique (game_id, user_id)
