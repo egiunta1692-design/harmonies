@@ -40,7 +40,6 @@ function mix(hex, target, ratio) {
   return `rgb(${nr},${ng},${nb})`
 }
 const lighten = (hex, ratio) => mix(hex, [255, 255, 255], ratio)
-const darken = (hex, ratio) => mix(hex, [0, 0, 0], ratio)
 
 // Disegna la pila di dischi di una casella come veri cilindri 3D
 // impilati (faccia superiore ellittica lucida, fianco dritto, bordo
@@ -64,12 +63,11 @@ function DiscStack({ cx, cy, discs, scale = 1 }) {
         const bodyBottomY = capY + sideH
         const base = DISC_HEX[color]
         const light = lighten(base, 0.28)
-        const dark = darken(base, 0.28)
 
         return (
           <g key={i}>
-            {/* bordo inferiore, in ombra */}
-            <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={dark} />
+            {/* bordo inferiore, stesso colore del fianco */}
+            <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} />
             {/* fianco cilindrico */}
             <rect x={cx - discW / 2} y={capY} width={discW} height={sideH} fill={base} />
             {/* faccia superiore, lucida */}
