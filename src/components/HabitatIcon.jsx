@@ -1,4 +1,4 @@
-import { DiscCylinder } from './DiscVisual'
+import { DISC_HEX, lighten, DiscCylinder } from './DiscVisual'
 
 export const CUBE_COLOR = '#F59E0B' // ambra, distinto dal rosso dei dischi
 
@@ -50,22 +50,61 @@ const CAP_RY = 3.2
 const SIDE_H = 4.5
 const ADVANCE = 5
 
+let clipIdCounter = 0
+
 // La base ambigua di un Edificio non è un colore singolo: il regolamento
 // permette marrone, grigio O rosso indifferentemente. Invece di
-// inventare un colore, mostriamo le 3 opzioni reali come mini-cilindri
-// affiancati, con lo stesso stile 3D degli altri dischi.
-function BaseOptionsCylinders({ cx, capY }) {
-  const options = ['brown', 'grey', 'red']
-  const miniW = DISC_W / 3 - 0.6
+// inventare un colore, la mostriamo come un unico cilindro diviso in 3
+// fasce verticali (marrone/grigio/rosso) — stessa taglia e stile degli
+// altri dischi della pila, non 3 cilindri separati più piccoli.
+function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
+  const bandColors = ['brown', 'grey', 'red']
+  const bandW = discW / 3
+  const bodyBottomY = capY + sideH
+  const idRef = (clipIdCounter++).toString()
+  const clipTopId = `base-clip-top-${idRef}`
+  const clipBottomId = `base-clip-bottom-${idRef}`
+
   return (
-    <>
-      {options.map((color, i) => {
-        const miniCx = cx - DISC_W / 2 + miniW / 2 + i * (DISC_W / 3)
-        return (
-          <DiscCylinder key={color} cx={miniCx} capY={capY} color={color} discW={miniW} capRy={CAP_RY * 0.85} sideH={SIDE_H} />
-        )
-      })}
-    </>
+    <g>
+      <defs>
+        <clipPath id={clipBottomId}>
+          <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} />
+        </clipPath>
+        <clipPath id={clipTopId}>
+          <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} />
+        </clipPath>
+      </defs>
+
+      {/* bordo inferiore, diviso in 3 fasce */}
+      <g clipPath={`url(#${clipBottomId})`}>
+        {bandColors.map((c, i) => (
+          <rect key={c} x={cx - discW / 2 + i * bandW} y={bodyBottomY - capRy} width={bandW} height={capRy * 2} fill={DISC_HEX[c]} />
+        ))}
+      </g>
+
+      {/* fianco, diviso in 3 fasce, con contorno */}
+      {bandColors.map((c, i) => (
+        <rect
+          key={c}
+          x={cx - discW / 2 + i * bandW}
+          y={capY}
+          width={bandW}
+          height={sideH}
+          fill={DISC_HEX[c]}
+          stroke="rgba(0,0,0,0.25)"
+          strokeWidth={0.5}
+        />
+      ))}
+
+      {/* faccia superiore, divisa in 3 fasce lucide, con contorno sull'intera ellisse */}
+      <g clipPath={`url(#${clipTopId})`}>
+        {bandColors.map((c, i) => (
+          <rect key={c} x={cx - discW / 2 + i * bandW} y={capY - capRy} width={bandW} height={capRy * 2} fill={lighten(DISC_HEX[c], 0.28)} />
+        ))}
+      </g>
+      <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+    </g>
   )
 }
 
@@ -79,7 +118,7 @@ function CellStack({ cx, cy, stack, hasCube }) {
       {stack.map((color, i) => {
         const capY = topCapY + (n - 1 - i) * ADVANCE
         return color === 'base' ? (
-          <BaseOptionsCylinders key={i} cx={cx} capY={capY} />
+          <BaseOptionsCylinder key={i} cx={cx} capY={capY} discW={DISC_W} capRy={CAP_RY} sideH={SIDE_H} />
         ) : (
           <DiscCylinder key={i} cx={cx} capY={capY} color={color} discW={DISC_W} capRy={CAP_RY} sideH={SIDE_H} />
         )
