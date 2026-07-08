@@ -3,6 +3,8 @@ import { scorePlayerBoard } from '../game-engine'
 const cellStyle = { border: '1px solid #ccc', padding: '4px 10px', textAlign: 'left' }
 
 export default function FinalScoreboard({ players, boardMode }) {
+  const waterLabel = boardMode === 'isole' ? 'Isole' : 'Fiume'
+
   const rows = players.map((p) => {
     const score = scorePlayerBoard(p.board_state, p.animal_cards ?? [], boardMode)
     const cubesPlaced = (p.animal_cards ?? []).reduce((sum, c) => sum + c.cubesPlaced, 0)
@@ -22,6 +24,11 @@ export default function FinalScoreboard({ players, boardMode }) {
         <thead>
           <tr>
             <th style={cellStyle}>Giocatore</th>
+            <th style={cellStyle}>Alberi</th>
+            <th style={cellStyle}>Montagne</th>
+            <th style={cellStyle}>Campi</th>
+            <th style={cellStyle}>Edifici</th>
+            <th style={cellStyle}>{waterLabel}</th>
             <th style={cellStyle}>Paesaggio</th>
             <th style={cellStyle}>Animali</th>
             <th style={cellStyle}>Cubi</th>
@@ -37,6 +44,11 @@ export default function FinalScoreboard({ players, boardMode }) {
                   {isWinner && '🏆 '}
                   {r.nickname}
                 </td>
+                <td style={cellStyle}>{r.score.trees}</td>
+                <td style={cellStyle}>{r.score.mountains}</td>
+                <td style={cellStyle}>{r.score.fields}</td>
+                <td style={cellStyle}>{r.score.buildings}</td>
+                <td style={cellStyle}>{r.score.water}</td>
                 <td style={cellStyle}>{r.score.landscapeTotal}</td>
                 <td style={cellStyle}>{r.score.animals}</td>
                 <td style={cellStyle}>{r.cubesPlaced}</td>
