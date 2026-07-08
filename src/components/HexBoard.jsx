@@ -1,4 +1,4 @@
-import { DiscStackVisual, stackTopCapY, DISC_STROKE, DISC_STROKE_WIDTH } from './DiscVisual'
+import { DiscStackVisual, stackTopCapY, DISC_STROKE_WIDTH } from './DiscVisual'
 
 const HEX_SIZE = 32
 
@@ -51,56 +51,57 @@ export default function HexBoard({
   const highlightSet = new Set(highlightCells.map(({ q, r }) => `${q},${r}`))
 
   return (
-    <svg
-      viewBox={`${minX} ${minY} ${width} ${height}`}
-      style={{
-        width: 'auto',
-        height: 'auto',
-        maxWidth: '100%',
-        maxHeight: `${maxHeightVh}vh`,
-        minWidth: compact ? 120 : 200,
-        display: 'block',
-        margin: '0 auto'
-      }}
-    >
-      {positions.map(({ q, r, x, y }) => {
-        const cell = boardState.cells[`${q},${r}`] ?? { discs: [], animalCube: null }
-        const isHighlighted = highlightSet.has(`${q},${r}`)
-        const s = compact ? 0.8 : 1
-        const discW = 24 * s
-        const capRy = 5 * s
-        const sideH = 7 * s
-        const advance = 8 * s
-        const cubeSize = 11 * s
-        const topCapY = stackTopCapY(y, cell.discs.length, capRy, sideH, advance)
+    <div style={{ maxHeight: `${maxHeightVh}vh`, overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+      <svg
+        viewBox={`${minX} ${minY} ${width} ${height}`}
+        style={{
+          width: 'auto',
+          height: 'auto',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          minWidth: compact ? 120 : 200,
+          display: 'block'
+        }}
+      >
+        {positions.map(({ q, r, x, y }) => {
+          const cell = boardState.cells[`${q},${r}`] ?? { discs: [], animalCube: null }
+          const isHighlighted = highlightSet.has(`${q},${r}`)
+          const s = compact ? 0.8 : 1
+          const discW = 24 * s
+          const capRy = 5 * s
+          const sideH = 7 * s
+          const advance = 8 * s
+          const cubeSize = 11 * 0.67 * s // ridotto di un terzo
+          const topCapY = stackTopCapY(y, cell.discs.length, capRy, sideH, advance)
 
-        return (
-          <g
-            key={`${q},${r}`}
-            onClick={() => onCellClick?.(q, r)}
-            style={{ cursor: onCellClick ? 'pointer' : 'default' }}
-          >
-            <polygon
-              points={hexPoints(x, y, size - 2)}
-              fill={isHighlighted ? '#fff3c4' : '#f1efe8'}
-              stroke={isHighlighted ? '#d97706' : highlightable ? '#333' : '#ccc'}
-              strokeWidth={isHighlighted ? 2 : 1}
-            />
-            <DiscStackVisual cx={x} cy={y} discs={cell.discs} discW={discW} capRy={capRy} sideH={sideH} advance={advance} />
-            {cell.animalCube && (
-              <rect
-                x={x - cubeSize / 2}
-                y={topCapY - cubeSize - capRy * 0.2}
-                width={cubeSize}
-                height={cubeSize}
-                fill="#F59E0B"
-                stroke={DISC_STROKE}
-                strokeWidth={DISC_STROKE_WIDTH}
+          return (
+            <g
+              key={`${q},${r}`}
+              onClick={() => onCellClick?.(q, r)}
+              style={{ cursor: onCellClick ? 'pointer' : 'default' }}
+            >
+              <polygon
+                points={hexPoints(x, y, size - 2)}
+                fill={isHighlighted ? '#fff3c4' : '#f1efe8'}
+                stroke={isHighlighted ? '#d97706' : highlightable ? '#333' : '#ccc'}
+                strokeWidth={isHighlighted ? 2 : 1}
               />
-            )}
-          </g>
-        )
-      })}
-    </svg>
+              <DiscStackVisual cx={x} cy={y} discs={cell.discs} discW={discW} capRy={capRy} sideH={sideH} advance={advance} />
+              {cell.animalCube && (
+                <rect
+                  x={x - cubeSize / 2}
+                  y={topCapY - cubeSize - capRy * 0.2}
+                  width={cubeSize}
+                  height={cubeSize}
+                  fill="#F59E0B"
+                  stroke="#fff"
+                  strokeWidth={DISC_STROKE_WIDTH}
+                />
+              )}
+            </g>
+          )
+        })}
+      </svg>
+    </div>
   )
 }

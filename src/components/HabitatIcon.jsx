@@ -49,7 +49,7 @@ const DISC_W = 16
 const CAP_RY = 3.2
 const SIDE_H = 4.5
 const ADVANCE = 5
-const CUBE_SIZE = 7 // stesso rapporto discW/cubeSize usato sulla plancia
+const CUBE_SIZE = 4.7 // stesso rapporto discW/cubeSize usato sulla plancia, ridotto di un terzo
 
 let clipIdCounter = 0
 
@@ -134,7 +134,7 @@ function CellStack({ cx, cy, stack, hasCube }) {
           width={CUBE_SIZE}
           height={CUBE_SIZE}
           fill={CUBE_COLOR}
-          stroke={DISC_STROKE}
+          stroke="#fff"
           strokeWidth={DISC_STROKE_WIDTH}
         />
       )}
