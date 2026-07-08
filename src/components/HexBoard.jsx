@@ -26,62 +26,54 @@ function hexPoints(cx, cy, size) {
   return pts.join(' ')
 }
 
-// Schiarisce (percent positivo) o scurisce (percent negativo) un colore
-// esadecimale — serve per dare al disco un corpo in ombra e una faccia
-// superiore lucida, senza dover definire manualmente due tinte per colore.
-function shade(hex, percent) {
+// Interpola un colore verso il bianco o il nero in proporzione (non in
+// modo additivo): così un colore già chiaro come il grigio non sfonda
+// verso il bianco quando lo si schiarisce per la faccia superiore.
+function mix(hex, target, ratio) {
   const num = parseInt(hex.replace('#', ''), 16)
-  const clamp = (v) => Math.max(0, Math.min(255, v))
-  const r = clamp((num >> 16) + Math.round(255 * percent))
-  const g = clamp(((num >> 8) & 0xff) + Math.round(255 * percent))
-  const b = clamp((num & 0xff) + Math.round(255 * percent))
-  return `rgb(${r},${g},${b})`
+  const r = (num >> 16) & 0xff
+  const g = (num >> 8) & 0xff
+  const b = num & 0xff
+  const nr = Math.round(r + (target[0] - r) * ratio)
+  const ng = Math.round(g + (target[1] - g) * ratio)
+  const nb = Math.round(b + (target[2] - b) * ratio)
+  return `rgb(${nr},${ng},${nb})`
 }
+const lighten = (hex, ratio) => mix(hex, [255, 255, 255], ratio)
+const darken = (hex, ratio) => mix(hex, [0, 0, 0], ratio)
 
-// Disegna la pila di dischi di una casella come piccoli dischi 3D
-// impilati: ognuno ha un corpo cilindrico (colore scurito) e una faccia
-// superiore ellittica lucida (colore schiarito), stesso colore del
-// disco reale. Il disco più in basso è discs[0] (il primo posato),
-// quello più in alto è l'ultimo — riproduce ordine e tipo, non solo il
-// colore in cima.
+// Disegna la pila di dischi di una casella come veri cilindri 3D
+// impilati (faccia superiore ellittica lucida, fianco dritto, bordo
+// inferiore in ombra), parzialmente sovrapposti l'uno sull'altro come
+// nel gioco fisico. Il disco più in basso è discs[0] (il primo posato),
+// quello più in alto è l'ultimo.
 function DiscStack({ cx, cy, discs, scale = 1 }) {
   if (discs.length === 0) return null
-  const discW = 22 * scale
-  const discH = 11 * scale
-  const capH = discH * 0.6
-  const gap = 2 * scale
-  const totalH = discs.length * discH + (discs.length - 1) * gap
-  const bottomY = cy + totalH / 2 - discH
+  const discW = 24 * scale
+  const capRy = 5 * scale // raggio verticale della faccia ellittica
+  const sideH = 7 * scale // altezza del fianco cilindrico
+  const advance = 8 * scale // avanzamento verticale tra un disco e il successivo (< sideH+capRy*2: crea la sovrapposizione)
+  const n = discs.length
+  const totalH = (n - 1) * advance + sideH + capRy * 2
+  const topCapY = cy - totalH / 2 + capRy
 
   return (
     <>
       {discs.map((color, i) => {
-        const y = bottomY - i * (discH + gap)
+        const capY = topCapY + (n - 1 - i) * advance
+        const bodyBottomY = capY + sideH
         const base = DISC_HEX[color]
-        const light = shade(base, 0.32)
-        const dark = shade(base, -0.18)
-        const bodyH = discH - capH * 0.4
+        const light = lighten(base, 0.28)
+        const dark = darken(base, 0.28)
+
         return (
           <g key={i}>
-            <rect
-              x={cx - discW / 2}
-              y={y + capH * 0.4}
-              width={discW}
-              height={bodyH}
-              rx={bodyH / 2}
-              fill={dark}
-              stroke="rgba(0,0,0,0.2)"
-              strokeWidth={0.4}
-            />
-            <ellipse
-              cx={cx}
-              cy={y + capH / 2}
-              rx={discW / 2}
-              ry={capH / 2}
-              fill={light}
-              stroke="rgba(0,0,0,0.2)"
-              strokeWidth={0.4}
-            />
+            {/* bordo inferiore, in ombra */}
+            <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={dark} />
+            {/* fianco cilindrico */}
+            <rect x={cx - discW / 2} y={capY} width={discW} height={sideH} fill={base} />
+            {/* faccia superiore, lucida */}
+            <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill={light} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
           </g>
         )
       })}

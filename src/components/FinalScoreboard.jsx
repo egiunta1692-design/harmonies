@@ -19,7 +19,7 @@ export default function FinalScoreboard({ players, boardMode }) {
 
   return (
     <div>
-      <h2 style={{ margin: '4px 0 6px', fontSize: '1.2rem' }}>🏆 Partita finita! 🏆</h2>
+      <h2 style={{ margin: '4px 0 6px', fontSize: '1.2rem' }}>🏆 Partita finita!</h2>
       <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
         <thead>
           <tr>
