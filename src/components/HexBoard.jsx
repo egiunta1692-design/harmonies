@@ -1,4 +1,4 @@
-import { DiscStackVisual } from './DiscVisual'
+import { DiscStackVisual, stackTopCapY, DISC_STROKE, DISC_STROKE_WIDTH } from './DiscVisual'
 
 const HEX_SIZE = 32
 
@@ -66,6 +66,13 @@ export default function HexBoard({
       {positions.map(({ q, r, x, y }) => {
         const cell = boardState.cells[`${q},${r}`] ?? { discs: [], animalCube: null }
         const isHighlighted = highlightSet.has(`${q},${r}`)
+        const s = compact ? 0.8 : 1
+        const discW = 24 * s
+        const capRy = 5 * s
+        const sideH = 7 * s
+        const advance = 8 * s
+        const cubeSize = 11 * s
+        const topCapY = stackTopCapY(y, cell.discs.length, capRy, sideH, advance)
 
         return (
           <g
@@ -79,23 +86,16 @@ export default function HexBoard({
               stroke={isHighlighted ? '#d97706' : highlightable ? '#333' : '#ccc'}
               strokeWidth={isHighlighted ? 2 : 1}
             />
-            <DiscStackVisual
-              cx={x}
-              cy={y}
-              discs={cell.discs}
-              discW={24 * (compact ? 0.8 : 1)}
-              capRy={5 * (compact ? 0.8 : 1)}
-              sideH={7 * (compact ? 0.8 : 1)}
-              advance={8 * (compact ? 0.8 : 1)}
-            />
+            <DiscStackVisual cx={x} cy={y} discs={cell.discs} discW={discW} capRy={capRy} sideH={sideH} advance={advance} />
             {cell.animalCube && (
-              <circle
-                cx={x + size * 0.55}
-                cy={y - size * 0.55}
-                r={compact ? 5 : 6}
+              <rect
+                x={x - cubeSize / 2}
+                y={topCapY - capRy - cubeSize - 3 * s}
+                width={cubeSize}
+                height={cubeSize}
                 fill="#F59E0B"
-                stroke="#fff"
-                strokeWidth={1.5}
+                stroke={DISC_STROKE}
+                strokeWidth={DISC_STROKE_WIDTH}
               />
             )}
           </g>

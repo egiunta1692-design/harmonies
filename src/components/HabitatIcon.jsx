@@ -1,4 +1,4 @@
-import { DISC_HEX, lighten, DiscCylinder } from './DiscVisual'
+import { DISC_HEX, lighten, DiscCylinder, DISC_STROKE, DISC_STROKE_WIDTH } from './DiscVisual'
 
 export const CUBE_COLOR = '#F59E0B' // ambra, distinto dal rosso dei dischi
 
@@ -82,7 +82,7 @@ function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
           <rect key={c} x={cx - discW / 2 + i * bandW} y={bodyBottomY - capRy} width={bandW} height={capRy * 2} fill={DISC_HEX[c]} />
         ))}
       </g>
-      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill="none" stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
 
       {/* fianco, diviso in 3 fasce: solo linee verticali (bordi e divisori), niente riga piatta in alto/basso */}
       {bandColors.map((c, i) => (
@@ -95,8 +95,8 @@ function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
           y1={capY}
           x2={cx - discW / 2 + i * bandW}
           y2={bodyBottomY}
-          stroke="rgba(0,0,0,0.25)"
-          strokeWidth={0.5}
+          stroke={DISC_STROKE}
+          strokeWidth={DISC_STROKE_WIDTH}
         />
       ))}
 
@@ -106,7 +106,7 @@ function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
           <rect key={c} x={cx - discW / 2 + i * bandW} y={capY - capRy} width={bandW} height={capRy * 2} fill={lighten(DISC_HEX[c], 0.28)} />
         ))}
       </g>
-      <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill="none" stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
     </g>
   )
 }

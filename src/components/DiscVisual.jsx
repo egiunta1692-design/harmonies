@@ -12,6 +12,11 @@ export const DISC_HEX = {
   red: '#DC2626'
 }
 
+// Contorno condiviso: usato per tutti i dischi E per il cubo Animale
+// sulla plancia, così restano visivamente coerenti.
+export const DISC_STROKE = 'rgba(0,0,0,0.55)'
+export const DISC_STROKE_WIDTH = 1.2
+
 // Interpola un colore verso il bianco in proporzione (non in modo
 // additivo): così un colore già chiaro come il grigio non sfonda verso
 // il bianco quando lo si schiarisce per la faccia superiore.
@@ -36,13 +41,22 @@ export function DiscCylinder({ cx, capY, color, fill, discW, capRy, sideH }) {
 
   return (
     <g>
-      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <ellipse cx={cx} cy={bodyBottomY} rx={discW / 2} ry={capRy} fill={base} stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
       <rect x={cx - discW / 2} y={capY} width={discW} height={sideH} fill={base} />
-      <line x1={cx - discW / 2} y1={capY} x2={cx - discW / 2} y2={bodyBottomY} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
-      <line x1={cx + discW / 2} y1={capY} x2={cx + discW / 2} y2={bodyBottomY} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
-      <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill={light} stroke="rgba(0,0,0,0.25)" strokeWidth={0.5} />
+      <line x1={cx - discW / 2} y1={capY} x2={cx - discW / 2} y2={bodyBottomY} stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
+      <line x1={cx + discW / 2} y1={capY} x2={cx + discW / 2} y2={bodyBottomY} stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
+      <ellipse cx={cx} cy={capY} rx={discW / 2} ry={capRy} fill={light} stroke={DISC_STROKE} strokeWidth={DISC_STROKE_WIDTH} />
     </g>
   )
+}
+
+// Y del centro della faccia superiore del disco più in alto in una
+// pila di n dischi centrata su cy — serve per posizionare il cubo
+// Animale sopra l'ultimo disco posato, invece che in un angolo fisso.
+export function stackTopCapY(cy, n, capRy, sideH, advance) {
+  if (n === 0) return cy
+  const totalH = (n - 1) * advance + sideH + capRy * 2
+  return cy - totalH / 2 + capRy
 }
 
 // Pila di dischi (dal basso in alto), parzialmente sovrapposti come nel
@@ -51,8 +65,7 @@ export function DiscCylinder({ cx, capY, color, fill, discW, capRy, sideH }) {
 export function DiscStackVisual({ cx, cy, discs, discW = 24, capRy = 5, sideH = 7, advance = 8 }) {
   if (!discs || discs.length === 0) return null
   const n = discs.length
-  const totalH = (n - 1) * advance + sideH + capRy * 2
-  const topCapY = cy - totalH / 2 + capRy
+  const topCapY = stackTopCapY(cy, n, capRy, sideH, advance)
 
   return (
     <>
