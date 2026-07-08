@@ -1,4 +1,4 @@
-import { DiscStackVisual, stackTopCapY, DISC_STROKE_WIDTH } from './DiscVisual'
+import { DiscStackVisual, stackTopCapY, DISC_STROKE, DISC_STROKE_WIDTH } from './DiscVisual'
 
 const HEX_SIZE = 32
 
@@ -94,7 +94,7 @@ export default function HexBoard({
                 width={cubeSize}
                 height={cubeSize}
                 fill="#F59E0B"
-                stroke="#fff"
+                stroke={DISC_STROKE}
                 strokeWidth={DISC_STROKE_WIDTH}
               />
             )}

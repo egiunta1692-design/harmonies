@@ -134,7 +134,7 @@ function CellStack({ cx, cy, stack, hasCube }) {
           width={CUBE_SIZE}
           height={CUBE_SIZE}
           fill={CUBE_COLOR}
-          stroke="#fff"
+          stroke={DISC_STROKE}
           strokeWidth={DISC_STROKE_WIDTH}
         />
       )}
