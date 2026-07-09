@@ -625,10 +625,7 @@ export default function Game() {
     borderRadius: 8,
     padding: '10px 14px',
     boxSizing: 'border-box',
-    background:
-      'repeating-linear-gradient(45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
-      'repeating-linear-gradient(-45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
-      '#fdfbf3'
+    background: '#fdfbf3'
   }
 
   return (
@@ -711,7 +708,8 @@ export default function Game() {
                         border: i === takenSlotIndex ? '2px solid #333' : '1px solid #ccc',
                         borderRadius: 6,
                         cursor: isMyTurn ? 'pointer' : 'default',
-                        opacity: slot.length === 0 ? 0.3 : 1
+                        opacity: slot.length === 0 ? 0.3 : 1,
+                        background: '#fff'
                       }}
                     >
                       <CentralDiscPile discs={slot} />
@@ -877,6 +875,7 @@ export default function Game() {
                   highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
                   highlightCells={cubeTargetCells}
                   maxHeightVh={62}
+                  cellColor={game.board_mode === 'isole' ? '#cfe8f5' : undefined}
                 />
               </div>
             </div>
@@ -889,7 +888,12 @@ export default function Game() {
                 {otherPlayers.map((p) => (
                   <div key={p.id} style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flexShrink: 0, width: 260 }}>
-                      <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
+                      <HexBoard
+                        boardState={p.board_state}
+                        compact
+                        maxHeightVh={26}
+                        cellColor={game.board_mode === 'isole' ? '#cfe8f5' : undefined}
+                      />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                       <p style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>
