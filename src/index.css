@@ -5,6 +5,7 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #faf8f3;
+  background: radial-gradient(ellipse at top left, #fbf8ef 0%, #f4ecdc 55%, #ecdfc6 100%);
+  background-attachment: fixed;
   color: #222;
 }
