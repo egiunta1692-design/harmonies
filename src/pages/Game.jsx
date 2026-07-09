@@ -233,6 +233,22 @@ export default function Game() {
     restoredPendingTakeRef.current = true
   }, [myPlayer, isMyTurn, takenSlotIndex, turnDiscsTaken.length])
 
+  // Stesso discorso per la carta Animale presa ma non ancora confermata:
+  // senza questo, un refresh permetteva di prenderne una seconda nello
+  // stesso turno (il controllo "solo 1 per turno" viveva solo nello
+  // stato locale, andato perso col refresh).
+  const restoredPendingCardRef = useRef(false)
+  useEffect(() => {
+    if (restoredPendingCardRef.current) return
+    if (!myPlayer || !isMyTurn) return
+    if (animalCardTurn) return // stato locale già inizializzato
+
+    if (myPlayer.pending_animal_card) {
+      setAnimalCardTurn(myPlayer.pending_animal_card)
+    }
+    restoredPendingCardRef.current = true
+  }, [myPlayer, isMyTurn, animalCardTurn])
+
   if (!game || !myUserId) return <p>Caricamento partita...</p>
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
@@ -413,7 +429,7 @@ export default function Game() {
     try {
       await supabase
         .from('players')
-        .update({ board_state: currentBoard, animal_cards: currentHand, pending_take: null })
+        .update({ board_state: currentBoard, animal_cards: currentHand, pending_take: null, pending_animal_card: null })
         .eq('id', myPlayer.id)
 
       // Azzero lo stato locale QUI, prima di endTurn (che fa altre
@@ -510,7 +526,7 @@ export default function Game() {
     const newRow = game.animal_row.map((id, i) => (i === idx ? null : id))
     const newHand = [...committedHand, { cardId, cubesPlaced: 0 }]
 
-    await supabase.from('players').update({ animal_cards: newHand }).eq('id', myPlayer.id)
+    await supabase.from('players').update({ animal_cards: newHand, pending_animal_card: { cardId, slotIndex: idx } }).eq('id', myPlayer.id)
     await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
     setAnimalCardTurn({ cardId, slotIndex: idx })
   }
@@ -533,7 +549,7 @@ export default function Game() {
     const newHand = committedHand.filter((c) => !(c.cardId === animalCardTurn.cardId && c.cubesPlaced === 0))
 
     await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
-    await supabase.from('players').update({ animal_cards: newHand }).eq('id', myPlayer.id)
+    await supabase.from('players').update({ animal_cards: newHand, pending_animal_card: null }).eq('id', myPlayer.id)
     setAnimalCardTurn(null)
     return remainingActions
   }
@@ -691,13 +707,6 @@ export default function Game() {
                       <CentralDiscPile discs={slot} />
                     </div>
                   ))}
-
-                  {isMyTurn && turnActions.length > 0 && (
-                    <>
-                      <button onClick={handleUndoLastAction}>Annulla ultima azione</button>
-                      <button onClick={handleUndoAllActions}>Annulla tutto il turno</button>
-                    </>
-                  )}
                 </div>
 
                 {/* Carte Animale a terra */}
@@ -719,42 +728,61 @@ export default function Game() {
                       )
                     })}
                   </div>
+                </div>
+              </div>
+
+              {/* Azioni del turno: tutte insieme in un'unica riga sotto, che
+                  compare/scompare senza mai spostare la riga di dischi/carte sopra. */}
+              {isMyTurn && (turnDiscsTaken.length > 0 || turnActions.length > 0 || animalCardTurn) && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 6, fontSize: '0.85rem' }}>
+                  {turnDiscsTaken.length > 0 && (
+                    <>
+                      <span>In mano:</span>
+                      {remainingDiscs.map((c, i) => (
+                        <span
+                          key={i}
+                          onClick={() => handleSelectColor(c)}
+                          style={{
+                            display: 'inline-block',
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            background: DISC_HEX[c],
+                            cursor: 'pointer',
+                            outline: selectedColor === c ? '3px solid #333' : 'none',
+                            outlineOffset: 2
+                          }}
+                        />
+                      ))}
+                      {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
+                    </>
+                  )}
+
+                  {turnActions.length > 0 && (
+                    <>
+                      <button onClick={handleUndoLastAction}>Annulla ultima azione</button>
+                      <button onClick={handleUndoAllActions}>Annulla tutto il turno</button>
+                    </>
+                  )}
+
                   {animalCardTurn && (
-                    <button onClick={handleUndoAnimalCard} style={{ flexShrink: 0, fontSize: '0.8rem' }}>
+                    <button onClick={handleUndoAnimalCard}>
                       {turnActions.some((a) => a.type === 'cube' && a.cardId === animalCardTurn.cardId)
                         ? 'Annulla presa carta (+ cubi)'
                         : 'Annulla presa carta'}
                     </button>
                   )}
-                </div>
-              </div>
 
-              {isMyTurn && turnDiscsTaken.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 6, fontSize: '0.85rem' }}>
-                  <span>In mano:</span>
-                  {remainingDiscs.map((c, i) => (
-                    <span
-                      key={i}
-                      onClick={() => handleSelectColor(c)}
-                      style={{
-                        display: 'inline-block',
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        background: DISC_HEX[c],
-                        cursor: 'pointer',
-                        outline: selectedColor === c ? '3px solid #333' : 'none',
-                        outlineOffset: 2
-                      }}
-                    />
-                  ))}
-                  {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
-                  <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
-                    Rinuncia alla presa
-                  </button>
-                  <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
-                    {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
-                  </button>
+                  {turnDiscsTaken.length > 0 && (
+                    <>
+                      <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
+                        Rinuncia alla presa
+                      </button>
+                      <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
+                        {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
