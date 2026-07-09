@@ -11,6 +11,7 @@ import {
   createEmptyPlayerBoard,
   takeDiscsFromCentralBoard,
   refillCentralBoard,
+  refillAnimalRow,
   canPlaceDisc,
   placeDisc,
   getAnimalCard,
@@ -445,11 +446,14 @@ export default function Game() {
     const bagEmptyAtRefill = needsRefill && freshGame.bag.length === 0
 
     const { centralBoard, bag } = refillCentralBoard(freshGame.central_board, freshGame.bag)
+    const { animalRow, animalDeck } = refillAnimalRow(freshGame.animal_row, freshGame.animal_deck)
     const nextIndex = (freshGame.current_turn_index + 1) % freshGame.turn_order.length
 
     const updates = {
       central_board: centralBoard,
       bag,
+      animal_row: animalRow,
+      animal_deck: animalDeck,
       current_turn_index: nextIndex,
       turn_count: (freshGame.turn_count ?? 0) + 1
     }
@@ -495,17 +499,20 @@ export default function Game() {
     if (animalCardTurn) return setError('Puoi prendere solo 1 carta Animale per turno')
     if (myActiveCards.length >= 4) return setError('Hai già 4 carte Animale attive')
 
+    const cardDef = getAnimalCard(cardId)
+    if (66 - cubesUsed < cardDef.points.length) {
+      return setError('Non ci sono abbastanza cubi Animale rimasti in riserva per questa carta')
+    }
+
     const idx = game.animal_row.indexOf(cardId)
     if (idx === -1) return
 
-    const newDeck = [...game.animal_deck]
-    const replacement = newDeck.shift() ?? null
-    const newRow = game.animal_row.map((id, i) => (i === idx ? replacement : id))
+    const newRow = game.animal_row.map((id, i) => (i === idx ? null : id))
     const newHand = [...committedHand, { cardId, cubesPlaced: 0 }]
 
     await supabase.from('players').update({ animal_cards: newHand }).eq('id', myPlayer.id)
-    await supabase.from('games').update({ animal_row: newRow, animal_deck: newDeck }).eq('id', game.id)
-    setAnimalCardTurn({ cardId, slotIndex: idx, replacementId: replacement })
+    await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
+    setAnimalCardTurn({ cardId, slotIndex: idx })
   }
 
   // Rimette la carta presa in questo turno al suo posto. Se nel
@@ -523,12 +530,9 @@ export default function Game() {
 
     const { data: freshGame } = await supabase.from('games').select().eq('id', game.id).single()
     const newRow = freshGame.animal_row.map((id, i) => (i === animalCardTurn.slotIndex ? animalCardTurn.cardId : id))
-    const newDeck = animalCardTurn.replacementId
-      ? [animalCardTurn.replacementId, ...freshGame.animal_deck]
-      : freshGame.animal_deck
     const newHand = committedHand.filter((c) => !(c.cardId === animalCardTurn.cardId && c.cubesPlaced === 0))
 
-    await supabase.from('games').update({ animal_row: newRow, animal_deck: newDeck }).eq('id', game.id)
+    await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
     await supabase.from('players').update({ animal_cards: newHand }).eq('id', myPlayer.id)
     setAnimalCardTurn(null)
     return remainingActions
@@ -729,8 +733,8 @@ export default function Game() {
               <div style={{ margin: '6px 0 0' }}>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-                    {game.animal_row.map((cardId) => {
-                      if (!cardId) return null
+                    {game.animal_row.map((cardId, i) => {
+                      if (!cardId) return <div key={i} style={{ ...cardBoxStyle(false), opacity: 0.3 }} />
                       const card = getAnimalCard(cardId)
                       return (
                         <div

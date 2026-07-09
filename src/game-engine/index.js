@@ -97,5 +97,19 @@ export function refillCentralBoard(centralBoard, bag) {
   return { centralBoard: newCentralBoard, bag: remainingBag }
 }
 
+// Fine turno (pag. 4, riassunto): rifornisce la fila di carte Animale
+// in modo che ci siano sempre 5 carte scoperte. Prendere una carta
+// lascia la casella vuota (null) durante il turno; questa funzione la
+// colma pescando dal mazzo, SOLO alla conferma del turno — non subito
+// al momento della presa.
+export function refillAnimalRow(animalRow, animalDeck) {
+  let remainingDeck = [...animalDeck]
+  const newRow = animalRow.map((cardId) => {
+    if (cardId) return cardId
+    return remainingDeck.shift() ?? null
+  })
+  return { animalRow: newRow, animalDeck: remainingDeck }
+}
+
 // Punteggio finale (Alberi, Montagne, Campi, Edifici, Acqua, carte Animale)
 export { scorePlayerBoard } from './scoring.js'
