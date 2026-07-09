@@ -671,7 +671,7 @@ export default function Game() {
 
           {game.status === 'playing' && (
             <>
-              <div style={{ fontSize: '0.85rem', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '0.85rem', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', marginTop: 16 }}>
                 {/* Plancia centrale */}
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   {game.central_board.map((slot, i) => (
