@@ -26,16 +26,13 @@ function hexPoints(cx, cy, size) {
 // compact: riduce le dimensioni, per mostrare le plance degli altri giocatori
 // maxHeightVh: altezza massima in vh (viewport height), per garantire che
 // la board non sfori mai lo schermo indipendentemente dalla risoluzione
-// cellColor: colore di sfondo delle caselle vuote (varia in base alla
-// modalità di gioco, impostato da chi usa il componente)
 export default function HexBoard({
   boardState,
   onCellClick,
   highlightable = false,
   highlightCells = [],
   compact = false,
-  maxHeightVh = compact ? 30 : 55,
-  cellColor = '#f1efe8'
+  maxHeightVh = compact ? 30 : 55
 }) {
   if (!boardState?.cells) return <p style={{ color: '#888' }}>Plancia non ancora pronta...</p>
 
@@ -85,7 +82,7 @@ export default function HexBoard({
           >
             <polygon
               points={hexPoints(x, y, size - 2)}
-              fill={isHighlighted ? '#fff3c4' : cellColor}
+              fill={isHighlighted ? '#fff3c4' : '#f1efe8'}
               stroke={isHighlighted ? '#d97706' : highlightable ? '#333' : '#ccc'}
               strokeWidth={isHighlighted ? 2 : 1}
             />

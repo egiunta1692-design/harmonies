@@ -868,14 +868,23 @@ export default function Game() {
               </div>
 
               {/* Plancia, a destra della griglia carte */}
-              <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  background: game.board_mode === 'isole' ? '#cfe8f5' : 'transparent',
+                  borderRadius: 8
+                }}
+              >
                 <HexBoard
                   boardState={currentBoard}
                   onCellClick={isMyTurn ? handleCellClick : undefined}
                   highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
                   highlightCells={cubeTargetCells}
                   maxHeightVh={62}
-                  cellColor={game.board_mode === 'isole' ? '#cfe8f5' : undefined}
                 />
               </div>
             </div>
@@ -887,13 +896,15 @@ export default function Game() {
               <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {otherPlayers.map((p) => (
                   <div key={p.id} style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flexShrink: 0, width: 260 }}>
-                      <HexBoard
-                        boardState={p.board_state}
-                        compact
-                        maxHeightVh={26}
-                        cellColor={game.board_mode === 'isole' ? '#cfe8f5' : undefined}
-                      />
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: 260,
+                        background: game.board_mode === 'isole' ? '#cfe8f5' : 'transparent',
+                        borderRadius: 8
+                      }}
+                    >
+                      <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                       <p style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>
