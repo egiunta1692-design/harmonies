@@ -6,7 +6,7 @@ import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
 import CentralDiscPile from '../components/CentralDiscPile'
-import { DISC_HEX } from '../components/DiscVisual'
+import { SingleDiscIcon } from '../components/DiscVisual'
 import {
   createEmptyPlayerBoard,
   takeDiscsFromCentralBoard,
@@ -385,7 +385,7 @@ export default function Game() {
 
     setTurnActions([...turnActions, { type: 'disc', q, r, color: selectedColor }])
     setRemainingDiscs(newRemaining)
-    setSelectedColor(newRemaining.length === 1 ? newRemaining[0] : null)
+    setSelectedColor(newRemaining[0] ?? null)
   }
 
   // Annulla l'ultima azione di questo turno, sia essa un disco o un
@@ -411,8 +411,18 @@ export default function Game() {
     setError(null)
     if (!isMyTurn) return
 
-    const remainingActions = await undoAnimalCardTake(turnActions)
-    setTurnActions(remainingActions)
+    // "Tutto" significa davvero tutto: dischi E cubi, sempre azzerati.
+    // Se c'era anche una carta Animale presa in questo turno, la
+    // ripristiniamo a parte (scrive sul server), ma il risultato non
+    // deve mai condizionare l'azzeramento di turnActions qui sotto —
+    // prima capitava che, senza una carta di mezzo, turnActions restasse
+    // invariato (i dischi restavano piazzati sulla plancia) mentre i
+    // dischi tornavano comunque "in mano": la causa della duplicazione.
+    if (animalCardTurn) {
+      await undoAnimalCardTake(turnActions)
+    }
+
+    setTurnActions([])
     setRemainingDiscs(turnDiscsTaken)
     setSelectedColor(turnDiscsTaken[0] ?? null)
     setSelectedCardForCube(null)
@@ -746,21 +756,20 @@ export default function Game() {
                   {turnDiscsTaken.length > 0 && (
                     <>
                       <span>In mano:</span>
-                      {remainingDiscs.map((c, i) => (
+                      {[...remainingDiscs].reverse().map((c, i) => (
                         <span
                           key={i}
                           onClick={() => handleSelectColor(c)}
                           style={{
-                            display: 'inline-block',
-                            width: 18,
-                            height: 18,
-                            borderRadius: '50%',
-                            background: DISC_HEX[c],
+                            display: 'inline-flex',
                             cursor: 'pointer',
+                            borderRadius: 6,
                             outline: selectedColor === c ? '3px solid #333' : 'none',
-                            outlineOffset: 2
+                            outlineOffset: 1
                           }}
-                        />
+                        >
+                          <SingleDiscIcon color={c} size={26} />
+                        </span>
                       ))}
                       {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
                     </>

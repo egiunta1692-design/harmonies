@@ -76,3 +76,21 @@ export function DiscStackVisual({ cx, cy, discs, discW = 24, capRy = 5, sideH = 
     </>
   )
 }
+
+// Disco singolo isolato (non impilato), in un piccolo SVG autonomo con
+// l'ingombro già calcolato — stesse proporzioni dei dischi sulla
+// plancia (discW:capRy:sideH), solo in scala. Utile per file di dischi
+// affiancati, come quelli "in mano" da piazzare.
+export function SingleDiscIcon({ color, size = 26 }) {
+  const discW = size
+  const capRy = size * 0.208
+  const sideH = size * 0.29
+  const width = discW + 6
+  const height = sideH + capRy * 2 + 4
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <DiscCylinder cx={width / 2} capY={capRy + 2} color={color} discW={discW} capRy={capRy} sideH={sideH} />
+    </svg>
+  )
+}
