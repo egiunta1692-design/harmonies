@@ -133,7 +133,7 @@ export default function Lobby() {
       </label>
 
       <button onClick={handleCreate} disabled={loading} style={{ width: '100%', marginBottom: '1rem' }}>
-        Crea una nuova stanza
+        ➕ Crea una nuova stanza
       </button>
 
       <hr />
@@ -143,7 +143,7 @@ export default function Lobby() {
         <input value={joinCode} onChange={(e) => setJoinCode(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '1rem' }} />
       </label>
       <button onClick={handleJoin} disabled={loading} style={{ width: '100%' }}>
-        Entra in una stanza
+        🚪 Entra in una stanza
       </button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

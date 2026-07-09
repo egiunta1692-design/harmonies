@@ -69,7 +69,7 @@ export default class ErrorBoundary extends Component {
           >
             {String(this.state.error?.message ?? this.state.error)}
           </pre>
-          <button onClick={() => window.location.reload()}>Ricarica la pagina</button>
+          <button onClick={() => window.location.reload()}>🔄 Ricarica la pagina</button>
         </div>
       )
     }

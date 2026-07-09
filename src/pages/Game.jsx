@@ -680,7 +680,7 @@ export default function Game() {
           )}
 
           {game.status === 'waiting' && (
-            <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
+            <button onClick={handleStartGame}>▶️ Avvia partita ({players.length} giocatori)</button>
           )}
 
           {game.status === 'finished' && <FinalScoreboard players={players} boardMode={game.board_mode} />}
@@ -760,26 +760,26 @@ export default function Game() {
 
                   {turnActions.length > 0 && (
                     <>
-                      <button onClick={handleUndoLastAction}>Annulla ultima azione</button>
-                      <button onClick={handleUndoAllActions}>Annulla tutto il turno</button>
+                      <button onClick={handleUndoLastAction}>↩️ Annulla ultima azione</button>
+                      <button onClick={handleUndoAllActions}>⏮️ Annulla tutto il turno</button>
                     </>
                   )}
 
                   {animalCardTurn && (
                     <button onClick={handleUndoAnimalCard}>
                       {turnActions.some((a) => a.type === 'cube' && a.cardId === animalCardTurn.cardId)
-                        ? 'Annulla presa carta (+ cubi)'
-                        : 'Annulla presa carta'}
+                        ? '🗑️ Annulla presa carta (+ cubi)'
+                        : '🗑️ Annulla presa carta'}
                     </button>
                   )}
 
                   {turnDiscsTaken.length > 0 && (
                     <>
                       <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
-                        Rinuncia alla presa
+                        🙅 Rinuncia alla presa
                       </button>
                       <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
-                        {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
+                        {confirmingTurn ? 'Confermo...' : '✅ Conferma turno'}
                       </button>
                     </>
                   )}
