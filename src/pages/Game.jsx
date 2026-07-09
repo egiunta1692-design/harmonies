@@ -115,6 +115,7 @@ export default function Game() {
   const [selectedCardForCube, setSelectedCardForCube] = useState(null)
 
   const [error, setError] = useState(null)
+  const [zoomedCard, setZoomedCard] = useState(null) // { card, entry? } per il popup di ingrandimento
   const [confirmingTurn, setConfirmingTurn] = useState(false)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
@@ -618,8 +619,41 @@ export default function Game() {
     padding: 6,
     minWidth: 92,
     flexShrink: 0,
-    background: '#fff'
+    background: '#fff',
+    position: 'relative'
   })
+
+  // Lente di ingrandimento su ogni carta: stopPropagation evita di
+  // innescare il click della carta sottostante (presa carta / selezione
+  // per il cubo). "entry" è opzionale, solo per le carte in mano
+  // (mostra i cubi già piazzati nel popup).
+  function CardZoomButton({ card, entry }) {
+    return (
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setZoomedCard({ card, entry })
+        }}
+        title="Ingrandisci"
+        style={{
+          position: 'absolute',
+          top: 2,
+          right: 2,
+          width: 20,
+          height: 20,
+          padding: 0,
+          border: '1px solid #ccc',
+          background: 'rgba(255,255,255,0.9)',
+          borderRadius: '50%',
+          fontSize: 11,
+          lineHeight: '18px',
+          cursor: 'pointer'
+        }}
+      >
+        🔍
+      </button>
+    )
+  }
 
   const turnBadgeStyle = (isCurrent) => ({
     display: 'inline-block',
@@ -739,6 +773,7 @@ export default function Game() {
                           onClick={() => handleTakeAnimalCard(cardId)}
                           style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
                         >
+                          <CardZoomButton card={card} />
                           <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                           <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
                           <HabitatIcon habitat={card.habitat} />
@@ -872,6 +907,7 @@ export default function Game() {
                         cursor: completed ? 'default' : 'pointer'
                       }}
                     >
+                      <CardZoomButton card={card} entry={entry} />
                       <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                       <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
                       <div style={{ fontSize: 10, color: '#999' }}>
@@ -939,13 +975,14 @@ export default function Game() {
                           const currentPoints = entry.cubesPlaced === 0 ? 0 : card.points[entry.cubesPlaced - 1]
                           return (
                             <div key={i} style={{ ...cardBoxStyle(false), minWidth: 0 }}>
-                              <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                              <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
-                              <div style={{ fontSize: 10, color: '#999' }}>
-                                {entry.cubesPlaced}/{card.points.length} — {currentPoints} pt
-                              </div>
-                              <HabitatIcon habitat={card.habitat} />
+                            <CardZoomButton card={card} entry={entry} />
+                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                            <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                            <div style={{ fontSize: 10, color: '#999' }}>
+                              {entry.cubesPlaced}/{card.points.length} — {currentPoints} pt
                             </div>
+                            <HabitatIcon habitat={card.habitat} />
+                          </div>
                           )
                         })}
                         {(p.animal_cards ?? []).length === 0 && (
@@ -958,6 +995,49 @@ export default function Game() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {zoomedCard && (
+        <div
+          onClick={() => setZoomedCard(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: '24px 32px',
+              maxWidth: 380,
+              textAlign: 'center',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.35)'
+            }}
+          >
+            <h2 style={{ margin: '0 0 6px' }}>{zoomedCard.card.name}</h2>
+            <p style={{ fontSize: '1.2rem', color: '#666', margin: '0 0 4px' }}>{zoomedCard.card.points.join(' / ')}</p>
+            <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
+            {zoomedCard.entry && (
+              <p style={{ fontWeight: 'bold', margin: '0 0 12px' }}>
+                {zoomedCard.entry.cubesPlaced}/{zoomedCard.card.points.length} cubi piazzati
+                {zoomedCard.entry.cubesPlaced > 0 && ` — ${zoomedCard.card.points[zoomedCard.entry.cubesPlaced - 1]} pt`}
+              </p>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+              <div style={{ transform: 'scale(3)' }}>
+                <HabitatIcon habitat={zoomedCard.card.habitat} />
+              </div>
+            </div>
+            <button onClick={() => setZoomedCard(null)}>Chiudi</button>
+          </div>
         </div>
       )}
     </div>
