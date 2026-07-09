@@ -258,6 +258,11 @@ export default function Game() {
     0
   )
 
+  const bagCounts = (game?.bag ?? []).reduce((acc, color) => {
+    acc[color] = (acc[color] || 0) + 1
+    return acc
+  }, {})
+
   function activeCardCount(p) {
     const hand = p.id === myPlayer?.id ? currentHand : p.animal_cards ?? []
     return hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
@@ -647,33 +652,11 @@ export default function Game() {
             </p>
           )}
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '6px 0' }}>
-            {players.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '3px 10px',
-                  borderRadius: 999,
-                  background: '#f1efe8',
-                  border: '1px solid #ccc',
-                  fontSize: '0.85rem'
-                }}
-              >
-                <span>{p.nickname}</span>
-                {game.status === 'playing' && (
-                  <span style={{ fontSize: '0.8em', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
-                )}
-              </div>
-            ))}
-          </div>
-
           {game.status === 'playing' && (
             <p style={{ margin: '0 0 6px', fontSize: '0.8rem', color: '#666' }}>
-              🎒 Sacchetto: {game.bag.length} dischi · 🐾 Mazzo Animali: {game.animal_deck.length} carte da
-              scoprire · 🧊 Cubi Animale: {66 - cubesUsed}/66 rimasti
+              👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
+              {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) · 🎴{game.animal_deck.length} ·
+              🟨{66 - cubesUsed}
             </p>
           )}
 
