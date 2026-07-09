@@ -633,6 +633,13 @@ export default function Game() {
                 Turno: {game.turn_count || '—'}
               </span>
             )}
+            {game.status === 'playing' && (
+              <span style={{ color: '#666', fontSize: '0.8rem' }}>
+                👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
+                {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) · 🎴
+                {game.animal_deck.length} · 🟨{66 - cubesUsed}
+              </span>
+            )}
           </div>
 
           {game.status === 'playing' && game.final_round && (
@@ -656,14 +663,6 @@ export default function Game() {
             </p>
           )}
 
-          {game.status === 'playing' && (
-            <p style={{ margin: '0 0 6px', fontSize: '0.8rem', color: '#666' }}>
-              👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
-              {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) · 🎴{game.animal_deck.length} ·
-              🟨{66 - cubesUsed}
-            </p>
-          )}
-
           {game.status === 'waiting' && (
             <button onClick={handleStartGame}>Avvia partita ({players.length} giocatori)</button>
           )}
@@ -672,7 +671,8 @@ export default function Game() {
 
           {game.status === 'playing' && (
             <>
-              <div style={{ fontSize: '0.85rem' }}>
+              <div style={{ fontSize: '0.85rem', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Plancia centrale */}
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   {game.central_board.map((slot, i) => (
                     <div
@@ -700,37 +700,7 @@ export default function Game() {
                   )}
                 </div>
 
-                {isMyTurn && turnDiscsTaken.length > 0 && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
-                    <span>In mano:</span>
-                    {remainingDiscs.map((c, i) => (
-                      <span
-                        key={i}
-                        onClick={() => handleSelectColor(c)}
-                        style={{
-                          display: 'inline-block',
-                          width: 18,
-                          height: 18,
-                          borderRadius: '50%',
-                          background: DISC_HEX[c],
-                          cursor: 'pointer',
-                          outline: selectedColor === c ? '3px solid #333' : 'none',
-                          outlineOffset: 2
-                        }}
-                      />
-                    ))}
-                    {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
-                    <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
-                      Rinuncia alla presa
-                    </button>
-                    <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
-                      {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ margin: '6px 0 0' }}>
+                {/* Carte Animale a terra */}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
                     {game.animal_row.map((cardId, i) => {
@@ -758,6 +728,35 @@ export default function Game() {
                   )}
                 </div>
               </div>
+
+              {isMyTurn && turnDiscsTaken.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 6, fontSize: '0.85rem' }}>
+                  <span>In mano:</span>
+                  {remainingDiscs.map((c, i) => (
+                    <span
+                      key={i}
+                      onClick={() => handleSelectColor(c)}
+                      style={{
+                        display: 'inline-block',
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        background: DISC_HEX[c],
+                        cursor: 'pointer',
+                        outline: selectedColor === c ? '3px solid #333' : 'none',
+                        outlineOffset: 2
+                      }}
+                    />
+                  ))}
+                  {remainingDiscs.length === 0 && <span style={{ color: '#888' }}>tutti piazzati</span>}
+                  <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
+                    Rinuncia alla presa
+                  </button>
+                  <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
+                    {confirmingTurn ? 'Confermo...' : 'Conferma turno'}
+                  </button>
+                </div>
+              )}
 
               {error && <p style={{ color: 'red', margin: '4px 0 0', fontSize: '0.85rem' }}>{error}</p>}
               {selectedCardForCube && (
