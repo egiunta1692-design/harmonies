@@ -1017,7 +1017,7 @@ export default function Game() {
               background: '#fff',
               borderRadius: 12,
               padding: '24px 32px',
-              maxWidth: 380,
+              maxWidth: 480,
               textAlign: 'center',
               boxShadow: '0 10px 40px rgba(0,0,0,0.35)'
             }}
