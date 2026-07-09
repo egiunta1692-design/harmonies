@@ -625,7 +625,10 @@ export default function Game() {
     borderRadius: 8,
     padding: '10px 14px',
     boxSizing: 'border-box',
-    background: '#fdfbf3'
+    background:
+      'repeating-linear-gradient(45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
+      'repeating-linear-gradient(-45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
+      '#fdfbf3'
   }
 
   return (

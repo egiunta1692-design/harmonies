@@ -110,7 +110,10 @@ export default function Lobby() {
         border: '1px solid #4a3f2f',
         borderRadius: 8,
         padding: '1.5rem',
-        background: '#fdfbf3'
+        background:
+          'repeating-linear-gradient(45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
+          'repeating-linear-gradient(-45deg, rgba(139, 115, 85, 0.09) 0px, rgba(139, 115, 85, 0.09) 1px, transparent 1px, transparent 6px), ' +
+          '#fdfbf3'
       }}
     >
       <h1>Harmonies online</h1>
