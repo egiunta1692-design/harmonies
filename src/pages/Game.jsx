@@ -1031,12 +1031,14 @@ export default function Game() {
                 {zoomedCard.entry.cubesPlaced > 0 && ` — ${zoomedCard.card.points[zoomedCard.entry.cubesPlaced - 1]} pt`}
               </p>
             )}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '30px 0 110px' }}>
               <div style={{ transform: 'scale(3)' }}>
                 <HabitatIcon habitat={zoomedCard.card.habitat} />
               </div>
             </div>
-            <button onClick={() => setZoomedCard(null)}>Chiudi</button>
+            <button onClick={() => setZoomedCard(null)} style={{ position: 'relative', zIndex: 1 }}>
+              Chiudi
+            </button>
           </div>
         </div>
       )}
