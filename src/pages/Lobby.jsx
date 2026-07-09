@@ -110,8 +110,7 @@ export default function Lobby() {
         border: '1px solid #4a3f2f',
         borderRadius: 8,
         padding: '1.5rem',
-        background:
-          '#fdfbf3 url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 200 200\'%3E%3Cpolygon points=\'100,10 182,55 182,145 100,190 18,145 18,55\' fill=\'none\' stroke=\'%236b8e5a\' stroke-width=\'3\' opacity=\'0.18\'/%3E%3Cpolygon points=\'100,45 152,72.5 152,127.5 100,155 48,127.5 48,72.5\' fill=\'none\' stroke=\'%23a97c50\' stroke-width=\'2\' opacity=\'0.18\'/%3E%3C/svg%3E") no-repeat bottom right / 160px 160px'
+        background: '#fdfbf3'
       }}
     >
       <h1>Harmonies online</h1>
