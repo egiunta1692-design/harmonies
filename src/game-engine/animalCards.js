@@ -44,11 +44,18 @@ function chain(cells, cubeIndex) {
 // Cluster a triangolo: due caselle di base adiacenti + una "in cima",
 // adiacente a entrambe. Usato per i pattern che nell'icona appaiono
 // come un piccolo triangolo invece di una fila dritta.
+// Cluster a triangolo: due caselle di base (non adiacenti tra loro) +
+// il vertice, centrato sopra entrambe e adiacente a entrambe — come
+// mostrato nelle icone reali (es. Pinguini, Pavoni, Martin Pescatore):
+// due dischi affiancati alla stessa altezza, il terzo incastrato sopra
+// nel mezzo. Le coordinate sono calcolate per la geometria esagonale
+// flat-top: baseSinistra=(-1,1) e baseDestra=(1,0) sono entrambe
+// adiacenti al vertice=(0,0) ma NON adiacenti tra loro.
 function triangle(a, b, top, cubeIndex) {
   const positions = [
-    { dq: 0, dr: 0 },
-    { dq: 1, dr: 0 },
-    { dq: 1, dr: -1 }
+    { dq: -1, dr: 1 }, // base sinistra
+    { dq: 1, dr: 0 }, // base destra
+    { dq: 0, dr: 0 } // vertice, centrato sopra le due basi
   ]
   return [a, b, top].map((c, i) => {
     const s = spec(c)
@@ -76,7 +83,7 @@ export const ANIMAL_CARDS = [
   { id: 'pipistrelli', name: 'Pipistrelli', points: [3, 6, 10, 15], habitat: pair('green', 'grey', { heightB: 2 }) },
   { id: 'pesci', name: 'Pesci', points: [3, 6, 10, 16], habitat: pair('grey', 'blue', { heightA: 2 }) },
   { id: 'facoceri', name: 'Facoceri', points: [4, 8, 13], habitat: pair('red', 'green') },
-  { id: 'falchi', name: 'Falchi', points: [5, 11], habitat: pair('yellow', 'grey') },
+  { id: 'falchi', name: 'Falchi', points: [5, 11], habitat: pair('yellow', 'grey', { heightB: 3 }) },
 
   // ---- Fila di 3 tessere: media confidenza ----
   { id: 'corvi', name: 'Corvi', points: [4, 9], habitat: chain(['red', 'yellow', 'red'], 1) }, // confermato da foto carta reale
@@ -99,7 +106,12 @@ export const ANIMAL_CARDS = [
   { id: 'pinguini', name: 'Pinguini', points: [4, 10, 16], habitat: triangle('blue', 'blue', 'grey', 2) },
   { id: 'pavoni', name: 'Pavoni', points: [5, 10, 17], habitat: triangle('blue', 'blue', 'red', 2) },
   { id: 'toporagno', name: 'Toporagno', points: [5, 10, 17], habitat: triangle('yellow', 'yellow', 'red', 2) },
-  { id: 'volpi_artiche', name: 'Volpi Artiche', points: [5, 10, 17], habitat: triangle('green', 'green', 'green', 2) },
+  {
+    id: 'volpi_artiche',
+    name: 'Volpi Artiche',
+    points: [5, 10, 17],
+    habitat: triangle({ color: 'green', height: 2 }, { color: 'green', height: 2 }, 'yellow', 2)
+  },
   {
     id: 'martin_pescatore',
     name: 'Martin Pescatore',

@@ -397,19 +397,34 @@ export default function Game() {
 
   // Annulla l'ultima azione di questo turno, sia essa un disco o un
   // cubo Animale — un'unica cronologia, un unico "indietro" coerente.
-  function handleUndoLastAction() {
+  async function handleUndoLastAction() {
     setError(null)
     if (!isMyTurn) return
     if (turnActions.length === 0) return
 
     const last = turnActions[turnActions.length - 1]
-    setTurnActions(turnActions.slice(0, -1))
+    let newActions = turnActions.slice(0, -1)
     setSelectedCardForCube(null)
 
     if (last.type === 'disc') {
       setRemainingDiscs([...remainingDiscs, last.color])
       setSelectedColor(last.color)
     }
+
+    // Se questa carta (completata prima) torna "attiva" annullando il
+    // cubo, e questo supera il limite di 4 carte attive — perché nel
+    // frattempo, approfittando dello slot liberato, avevi preso una
+    // nuova carta — quella nuova presa va annullata a cascata insieme
+    // ai suoi eventuali cubi, altrimenti resteresti con 5 carte attive.
+    if (animalCardTurn) {
+      const hand = applyHandDeltas(committedHand, newActions)
+      const activeCount = hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
+      if (activeCount > 4) {
+        newActions = await undoAnimalCardTake(newActions)
+      }
+    }
+
+    setTurnActions(newActions)
   }
 
   // "Tutto il turno" significa davvero tutto: dischi, cubi, E la carta

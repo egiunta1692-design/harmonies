@@ -39,11 +39,19 @@ export function findHabitatMatches(playerBoard, card) {
       const allMatch = resolved.every(({ q, r, spec }) => {
         const cell = playerBoard.cells[key(q, r)]
         if (!cell) return false
-        // Solo la casella che riceverebbe IL NUOVO cubo deve essere libera.
-        // Le altre caselle del pattern possono già avere un cubo Animale
-        // di un'altra carta: i dischi sotto restano validi per sempre
-        // (vedi NOTA pag. 6 del manuale), quindi contano comunque come
-        // "terreno" per questo pattern.
+        // Solo la casella che riceverebbe IL NUOVO cubo deve essere
+        // libera. Le altre caselle del pattern possono già avere un
+        // cubo Animale — di questa stessa carta (es. il Koala: due
+        // alberi adiacenti, il primo albero usato come supporto per il
+        // cubo sul secondo può comunque fare da supporto per un terzo
+        // cubo che punta di nuovo al primo) o di un'altra carta. I
+        // dischi sotto un cubo restano validi per sempre (NOTA pag. 6:
+        // "il posizionamento di un cubo è definitivo anche se il
+        // modello non è più presente"), e un disco può far parte di
+        // più Habitat (NOTA pag. 7), quindi contano comunque come
+        // "terreno" per un nuovo pattern — solo la casella bersaglio
+        // del cubo che stiamo per piazzare deve essere effettivamente
+        // libera.
         if (spec.cube && cell.animalCube) return false
         return cellMatchesSpec(cell.discs, spec)
       })
