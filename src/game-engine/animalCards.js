@@ -78,11 +78,11 @@ export const ANIMAL_CARDS = [
   { id: 'coccinelle', name: 'Coccinelle', points: [2, 5, 8, 12, 17], habitat: pair('green', 'yellow') },
   { id: 'rane', name: 'Rane', points: [2, 4, 6, 10, 15], habitat: pair('green', 'blue') },
   { id: 'suricati', name: 'Suricati', points: [2, 5, 9, 14], habitat: pair('yellow', 'grey') },
-  { id: 'koala', name: 'Koala', points: [3, 6, 10, 15], habitat: pair('green', 'green', { heightA: 2, heightB: 2 }) },
+  { id: 'koala', name: 'Koala', points: [3, 6, 10, 15], habitat: pair('green', 'green', { heightA: 2 }) },
   { id: 'anatre', name: 'Anatre', points: [2, 4, 8, 13], habitat: pair('red', 'blue', { heightA: 2 }) },
-  { id: 'pipistrelli', name: 'Pipistrelli', points: [3, 6, 10, 15], habitat: pair('green', 'grey', { heightB: 2 }) },
-  { id: 'pesci', name: 'Pesci', points: [3, 6, 10, 16], habitat: pair('grey', 'blue', { heightA: 2 }) },
-  { id: 'facoceri', name: 'Facoceri', points: [4, 8, 13], habitat: pair('red', 'green') },
+  { id: 'pipistrelli', name: 'Pipistrelli', points: [3, 6, 10, 15], habitat: pair('green', 'grey', { heightA: 3 }) },
+  { id: 'pesci', name: 'Pesci', points: [3, 6, 10, 16], habitat: pair('grey', 'blue', { heightA: 3 }) },
+  { id: 'facoceri', name: 'Facoceri', points: [4, 8, 13], habitat: pair('red', 'green', { heightB: 2 }) },
   { id: 'falchi', name: 'Falchi', points: [5, 11], habitat: pair('yellow', 'grey', { heightB: 3 }) },
 
   // ---- Fila di 3 tessere: media confidenza ----
