@@ -180,7 +180,13 @@ export default function Game() {
   }, [gameId])
 
   const myPlayer = players.find((p) => p.user_id === myUserId)
-  const otherPlayers = players.filter((p) => p.user_id !== myUserId)
+  // turn_order è fissato una sola volta all'avvio partita e non cambia
+  // mai: lo uso per un ordinamento stabile, dato che Supabase non
+  // garantisce lo stesso ordine di riga tra un refetch e l'altro (e ne
+  // facciamo uno a ogni cambio turno).
+  const otherPlayers = players
+    .filter((p) => p.user_id !== myUserId)
+    .sort((a, b) => (game?.turn_order ?? []).indexOf(a.id) - (game?.turn_order ?? []).indexOf(b.id))
 
   // Auto-riparazione: se la mia riga è rimasta con una plancia incompleta
   // (capitato con una versione precedente del codice, per via della RLS
