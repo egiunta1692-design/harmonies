@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, ensureAnonymousSession } from '../lib/supabaseClient'
-import { createInitialGameState, createEmptyPlayerBoard } from '../game-engine'
+import { createInitialGameState, createEmptyPlayerBoard, ANIMAL_CARDS } from '../game-engine'
+import HabitatIcon from '../components/HabitatIcon'
 
 function randomRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // niente caratteri ambigui
@@ -16,6 +17,7 @@ export default function Lobby() {
   const [boardMode, setBoardMode] = useState('standard')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showAllCards, setShowAllCards] = useState(false) // debug: verifica visiva di tutte le carte
   const navigate = useNavigate()
 
   async function handleCreate() {
@@ -157,6 +159,56 @@ export default function Lobby() {
       </button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      <hr />
+      <button onClick={() => setShowAllCards(true)} style={{ width: '100%', fontSize: '0.8rem' }}>
+        🔍 Verifica tutte le carte Animale (debug)
+      </button>
+
+      {showAllCards && (
+        <div
+          onClick={() => setShowAllCards(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              width: '100%',
+              maxWidth: 900,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h2 style={{ margin: 0 }}>Tutte le carte Animale ({ANIMAL_CARDS.length})</h2>
+              <button onClick={() => setShowAllCards(false)}>Chiudi</button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {ANIMAL_CARDS.map((card) => (
+                <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 110 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                  <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>{card.points.length} cubi</div>
+                  <HabitatIcon habitat={card.habitat} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
