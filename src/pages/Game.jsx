@@ -731,7 +731,26 @@ export default function Game() {
           )}
 
           {game.status === 'waiting' && (
-            <button onClick={handleStartGame}>▶️ Avvia partita ({players.length} giocatori)</button>
+            <div>
+              <p style={{ margin: '0 0 6px', fontWeight: 'bold' }}>Giocatori in stanza:</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                {players.map((p) => (
+                  <span
+                    key={p.id}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 999,
+                      background: '#f1efe8',
+                      border: '1px solid #ccc',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    {p.nickname}
+                  </span>
+                ))}
+              </div>
+              <button onClick={handleStartGame}>▶️ Avvia partita ({players.length} giocatori)</button>
+            </div>
           )}
 
           {game.status === 'finished' && <FinalScoreboard players={players} boardMode={game.board_mode} />}
