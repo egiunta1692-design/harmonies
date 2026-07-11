@@ -15,6 +15,7 @@ import {
   canPlaceDisc,
   placeDisc,
   getAnimalCard,
+  ANIMAL_CARDS,
   findHabitatMatches,
   placeAnimalCube
 } from '../game-engine'
@@ -116,6 +117,7 @@ export default function Game() {
 
   const [error, setError] = useState(null)
   const [zoomedCard, setZoomedCard] = useState(null) // { card, entry? } per il popup di ingrandimento
+  const [showAllCards, setShowAllCards] = useState(false) // debug: verifica visiva di tutte le carte
   const [confirmingTurn, setConfirmingTurn] = useState(false)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
@@ -724,8 +726,11 @@ export default function Game() {
             {game.status === 'playing' && (
               <span style={{ color: '#666', fontSize: '0.8rem' }}>
                 👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
-                {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) · 🎴
-                {game.animal_deck.length} · 🟨{66 - cubesUsed}
+                {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) ·{' '}
+                <span onClick={() => setShowAllCards(true)} style={{ cursor: 'pointer', textDecoration: 'underline dotted' }} title="Vedi tutte le carte Animale">
+                  🎴{game.animal_deck.length}
+                </span>{' '}
+                · 🟨{66 - cubesUsed}
               </span>
             )}
           </div>
@@ -1080,6 +1085,51 @@ export default function Game() {
             <button onClick={() => setZoomedCard(null)} style={{ position: 'relative', zIndex: 1 }}>
               Chiudi
             </button>
+          </div>
+        </div>
+      )}
+
+      {showAllCards && (
+        <div
+          onClick={() => setShowAllCards(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              width: '100%',
+              maxWidth: 900,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h2 style={{ margin: 0 }}>Tutte le carte Animale ({ANIMAL_CARDS.length})</h2>
+              <button onClick={() => setShowAllCards(false)}>Chiudi</button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {ANIMAL_CARDS.map((card) => (
+                <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 110 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                  <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>{card.points.length} cubi</div>
+                  <HabitatIcon habitat={card.habitat} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
