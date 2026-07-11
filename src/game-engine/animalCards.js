@@ -65,6 +65,24 @@ function triangle(a, b, top, cubeIndex) {
   })
 }
 
+// Grappolo compatto: 3 caselle TUTTE reciprocamente adiacenti tra loro
+// (a differenza di triangle(), dove le due basi non si toccano). Da
+// non confondere con il triangolo del Toporagno — qui non c'è nessun
+// "vuoto" al centro, le 3 caselle formano un blocco pieno.
+function cluster(a, b, c, cubeIndex) {
+  const positions = [
+    { dq: 0, dr: 0 },
+    { dq: 1, dr: 0 },
+    { dq: 1, dr: -1 }
+  ]
+  return [a, b, c].map((el, i) => {
+    const s = spec(el)
+    const out = { ...positions[i], ...s }
+    if (i === cubeIndex) out.cube = true
+    return out
+  })
+}
+
 // Coppia di 2 caselle adiacenti, cubo sempre sulla seconda.
 function pair(colorA, colorB, { heightA, heightB } = {}) {
   return [
@@ -86,26 +104,30 @@ export const ANIMAL_CARDS = [
   { id: 'falchi', name: 'Falchi', points: [5, 11], habitat: pair('yellow', 'grey', { heightB: 3 }) },
 
   // ---- Fila di 3 tessere: media confidenza ----
-  { id: 'corvi', name: 'Corvi', points: [4, 9], habitat: chain(['red', 'yellow', 'red'], 1) }, // confermato da foto carta reale
   { id: 'lontre', name: 'Lontre', points: [5, 10, 16], habitat: chain(['green', 'green', 'blue'], 2) },
   { id: 'volpi_fennec', name: 'Volpi Fennec', points: [4, 9, 16], habitat: chain(['yellow', 'grey', 'grey'], 2) },
   { id: 'conigli', name: 'Conigli', points: [5, 10, 17], habitat: chain(['red', 'green', 'green'], 2) },
   { id: 'gechi', name: 'Gechi', points: [5, 10, 16], habitat: chain(['yellow', 'yellow', 'red'], 2) },
-  { id: 'alligatori', name: 'Alligatori', points: [4, 9, 15], habitat: chain([{ color: 'green', height: 2 }, 'blue', 'blue'], 2) },
-  { id: 'mante', name: 'Mante', points: [4, 10, 16], habitat: chain(['grey', 'grey', 'blue'], 2) },
-  { id: 'fenicotteri', name: 'Fenicotteri', points: [4, 10, 16], habitat: chain(['yellow', 'yellow', 'blue'], 2) },
-  { id: 'lupi', name: 'Lupi', points: [4, 10, 16], habitat: chain(['yellow', { color: 'green', height: 2 }, { color: 'green', height: 2 }], 1) },
-  { id: 'pappagalli', name: 'Pappagalli', points: [4, 9, 14], habitat: chain(['blue', 'blue', 'green'], 2) },
+  { id: 'alligatori', name: 'Alligatori', points: [4, 9, 15], habitat: chain([{ color: 'green', height: 3 }, 'blue', 'blue'], 2) },
   { id: 'alpaca', name: 'Alpaca', points: [5, 12], habitat: chain(['grey', 'yellow', 'yellow'], 2) },
   { id: 'pantere', name: 'Pantere', points: [5, 11], habitat: chain([{ color: 'green', height: 2 }, { color: 'green', height: 2 }, 'red'], 2) },
-  { id: 'orsi_bruni', name: 'Orsi Bruni', points: [5, 11], habitat: chain(['grey', 'grey', 'green'], 2) },
-  { id: 'scimmie_artiche', name: 'Scimmie Artiche', points: [5, 11], habitat: chain(['blue', 'blue', { color: 'grey', height: 2 }], 2) },
-  { id: 'ricci', name: 'Ricci', points: [5, 12], habitat: chain(['green', 'green', 'red'], 2) },
 
-  // ---- Cluster a triangolo: media confidenza ----
+  // ---- Grappolo compatto (3 caselle tutte adiacenti tra loro): media confidenza ----
+  { id: 'mante', name: 'Mante', points: [4, 10, 16], habitat: cluster('grey', 'grey', 'blue', 2) },
+  { id: 'fenicotteri', name: 'Fenicotteri', points: [4, 10, 16], habitat: cluster('yellow', 'yellow', 'blue', 2) },
+  { id: 'lupi', name: 'Lupi', points: [4, 10, 16], habitat: cluster('yellow', { color: 'green', height: 2 }, { color: 'green', height: 2 }, 1) },
+  { id: 'pappagalli', name: 'Pappagalli', points: [4, 9, 14], habitat: cluster('blue', 'blue', 'green', 2) },
+  { id: 'orsi_bruni', name: 'Orsi Bruni', points: [5, 11], habitat: cluster('grey', 'grey', 'green', 2) },
+  { id: 'scimmie_artiche', name: 'Scimmie Artiche', points: [5, 11], habitat: cluster('blue', 'blue', { color: 'grey', height: 2 }, 2) },
+  { id: 'ricci', name: 'Ricci', points: [5, 12], habitat: cluster('green', 'green', 'red', 2) },
+
+  // ---- Cluster a triangolo (Toporagno-style, vuoto al centro): media confidenza ----
   { id: 'pinguini', name: 'Pinguini', points: [4, 10, 16], habitat: triangle('blue', 'blue', 'grey', 2) },
   { id: 'pavoni', name: 'Pavoni', points: [5, 10, 17], habitat: triangle('blue', 'blue', 'red', 2) },
   { id: 'toporagno', name: 'Toporagno', points: [5, 10, 17], habitat: triangle('yellow', 'yellow', 'red', 2) },
+  // Corvi: confermato a triangolo (non fila dritta) — due Edifici come
+  // base, giallo al vertice, stessa forma del Toporagno.
+  { id: 'corvi', name: 'Corvi', points: [4, 9], habitat: triangle('red', 'red', 'yellow', 2) },
   {
     id: 'volpi_artiche',
     name: 'Volpi Artiche',
@@ -118,11 +140,36 @@ export const ANIMAL_CARDS = [
     points: [5, 11, 18],
     habitat: triangle('blue', 'blue', { color: 'green', height: 3 }, 2) // torre a 3 piani, la più alta del mazzo
   },
-  { id: 'bombi', name: 'Bombi', points: [8, 18], habitat: triangle('yellow', 'yellow', { color: 'green', height: 2 }, 2) },
-  { id: 'procioni', name: 'Procioni', points: [6, 12], habitat: triangle('blue', 'blue', 'yellow', 2) },
 
-  // ---- Scoiattoli: unico caso rimasto con lettura incerta ----
-  { id: 'scoiattoli', name: 'Scoiattoli', points: [4, 9, 15], habitat: pair('green', 'red', { heightA: 2 }) }
+  // ---- 4 caselle: media confidenza ----
+  // Bombi: come il triangolo di Martin Pescatore/Volpi Artiche, con in
+  // più una quarta casella gialla sotto il vertice (albero).
+  {
+    id: 'bombi',
+    name: 'Bombi',
+    points: [8, 18],
+    habitat: [
+      { dq: -1, dr: 1, color: 'yellow' },
+      { dq: 1, dr: 0, color: 'yellow' },
+      { dq: 0, dr: 0, color: 'green', height: 2, cube: true },
+      { dq: 0, dr: 1, color: 'yellow' }
+    ]
+  },
+  // Procioni: stesso schema, quarta casella azzurra sotto il vertice giallo.
+  {
+    id: 'procioni',
+    name: 'Procioni',
+    points: [6, 12],
+    habitat: [
+      { dq: -1, dr: 1, color: 'blue' },
+      { dq: 1, dr: 0, color: 'blue' },
+      { dq: 0, dr: 0, color: 'yellow', cube: true },
+      { dq: 0, dr: 1, color: 'blue' }
+    ]
+  },
+
+  // ---- Scoiattoli ----
+  { id: 'scoiattoli', name: 'Scoiattoli', points: [4, 9, 15], habitat: pair('green', 'red', { heightA: 3 }) }
 ]
 
 export function getAnimalCard(cardId) {
