@@ -109,17 +109,17 @@ export const ANIMAL_CARDS = [
   { id: 'conigli', name: 'Conigli', points: [5, 10, 17], habitat: chain(['red', 'green', 'green'], 2) },
   { id: 'gechi', name: 'Gechi', points: [5, 10, 16], habitat: chain(['yellow', 'yellow', 'red'], 2) },
   { id: 'alligatori', name: 'Alligatori', points: [4, 9, 15], habitat: chain([{ color: 'green', height: 3 }, 'blue', 'blue'], 2) },
-  { id: 'alpaca', name: 'Alpaca', points: [5, 12], habitat: chain(['grey', 'yellow', 'yellow'], 2) },
-  { id: 'pantere', name: 'Pantere', points: [5, 11], habitat: chain([{ color: 'green', height: 2 }, { color: 'green', height: 2 }, 'red'], 2) },
+  { id: 'alpaca', name: 'Alpaca', points: [5, 12], habitat: chain([{ color: 'grey', height: 2 }, 'yellow', 'yellow'], 2) },
+  { id: 'pantere', name: 'Pantere', points: [5, 11], habitat: chain([{ color: 'green', height: 2 }, { color: 'green', height: 2 }, 'yellow'], 2) },
 
   // ---- Grappolo compatto (3 caselle tutte adiacenti tra loro): media confidenza ----
   { id: 'mante', name: 'Mante', points: [4, 10, 16], habitat: cluster('grey', 'grey', 'blue', 2) },
   { id: 'fenicotteri', name: 'Fenicotteri', points: [4, 10, 16], habitat: cluster('yellow', 'yellow', 'blue', 2) },
-  { id: 'lupi', name: 'Lupi', points: [4, 10, 16], habitat: cluster('yellow', { color: 'green', height: 2 }, { color: 'green', height: 2 }, 1) },
-  { id: 'pappagalli', name: 'Pappagalli', points: [4, 9, 14], habitat: cluster('blue', 'blue', 'green', 2) },
-  { id: 'orsi_bruni', name: 'Orsi Bruni', points: [5, 11], habitat: cluster('grey', 'grey', 'green', 2) },
+  { id: 'lupi', name: 'Lupi', points: [4, 10, 16], habitat: cluster('yellow', 'yellow', { color: 'green', height: 3 }, 2) },
+  { id: 'pappagalli', name: 'Pappagalli', points: [4, 9, 14], habitat: cluster('blue', 'blue', { color: 'green', height: 2 }, 2) },
+  { id: 'orsi_bruni', name: 'Orsi Bruni', points: [5, 11], habitat: cluster({ color: 'grey', height: 2 }, { color: 'grey', height: 2 }, 'green', 2) },
   { id: 'scimmie_artiche', name: 'Scimmie Artiche', points: [5, 11], habitat: cluster('blue', 'blue', { color: 'grey', height: 2 }, 2) },
-  { id: 'ricci', name: 'Ricci', points: [5, 12], habitat: cluster('green', 'green', 'red', 2) },
+  { id: 'ricci', name: 'Ricci', points: [5, 12], habitat: cluster({ color: 'green', height: 2 }, { color: 'green', height: 2 }, 'red', 2) },
 
   // ---- Cluster a triangolo (Toporagno-style, vuoto al centro): media confidenza ----
   { id: 'pinguini', name: 'Pinguini', points: [4, 10, 16], habitat: triangle('blue', 'blue', 'grey', 2) },
