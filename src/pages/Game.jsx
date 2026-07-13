@@ -371,6 +371,19 @@ export default function Game() {
     if (syncError) console.error("Errore nel sincronizzare l'anteprima live:", syncError)
   }
 
+  // Blocco esplicito: se l'espansione è attiva e hai ancora 2 carte
+  // Spirito della Natura da scegliere, NESSUNA azione del turno deve
+  // poter procedere — non ci si affida solo al popup (che potrebbe non
+  // comparire per una corsa di eventi realtime), questo controllo è
+  // indipendente dal rendering e usa solo dati confermati dal server.
+  function blockedByPendingNatureSpiritChoice() {
+    if (game?.nature_spirit_extension && myPlayer?.nature_spirit_choices?.length === 2) {
+      setError('Devi prima scegliere la tua carta Spirito della Natura (vedi il popup)')
+      return true
+    }
+    return false
+  }
+
   function activeCardCount(p) {
     const hand =
       p.id === myPlayer?.id
@@ -421,6 +434,7 @@ export default function Game() {
   async function handleTakeSlot(slotIndex) {
     setError(null)
     if (!isMyTurn) return setError('Non è il tuo turno')
+    if (blockedByPendingNatureSpiritChoice()) return
     if (slotIndex === takenSlotIndex) return
 
     if (turnDiscsTaken.length > 0) {
@@ -490,6 +504,7 @@ export default function Game() {
   async function handlePlaceDisc(q, r) {
     setError(null)
     if (!isMyTurn) return
+    if (blockedByPendingNatureSpiritChoice()) return
     if (!selectedColor) return setError('Seleziona prima un disco dalla tua mano')
 
     const check = canPlaceDisc(currentBoard, q, r, selectedColor)
@@ -590,6 +605,7 @@ export default function Game() {
     setError(null)
     if (!isMyTurn) return
     if (confirmingTurn) return // già in corso: ignora un secondo click rapido
+    if (blockedByPendingNatureSpiritChoice()) return
     if (turnDiscsTaken.length === 0) return setError('Devi prima prendere 3 dischi dalla plancia centrale')
     if (remainingDiscs.length > 0) return setError('Devi piazzare tutti i dischi prima di confermare')
 
@@ -705,6 +721,7 @@ export default function Game() {
   async function handleTakeAnimalCard(cardId) {
     setError(null)
     if (!isMyTurn) return setError('Non è il tuo turno')
+    if (blockedByPendingNatureSpiritChoice()) return
     if (animalCardTurn) return setError('Puoi prendere solo 1 carta Animale per turno')
     if (myActiveCards.length >= 4) return setError('Hai già 4 carte Animale attive')
 
@@ -760,6 +777,7 @@ export default function Game() {
   function handleSelectCardForCube(handEntry) {
     setError(null)
     if (!isMyTurn) return
+    if (blockedByPendingNatureSpiritChoice()) return
     if (selectedCardForCube === handEntry) {
       setSelectedCardForCube(null) // clic sulla stessa carta: deseleziona
       return
@@ -779,6 +797,7 @@ export default function Game() {
   async function handlePlaceAnimalCubeAt(q, r) {
     setError(null)
     if (!isMyTurn) return
+    if (blockedByPendingNatureSpiritChoice()) return
     const cardDef = getCardDef(selectedCardForCube.cardId)
     const matches = findHabitatMatches(currentBoard, cardDef)
     const match = matches.find((m) => m.cubeQ === q && m.cubeR === r)
