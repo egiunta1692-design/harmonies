@@ -330,7 +330,7 @@ export default function Game() {
         setSelectedColor(discs[0])
         setSelectedCardForCube(null)
         await supabase.from('games').update({ central_board: centralBoard }).eq('id', game.id)
-        await supabase.from('players').update({ pending_take: { slotIndex, discs } }).eq('id', myPlayer.id)
+        await supabase.from('players').update({ pending_take: { slotIndex, discs, remaining: discs } }).eq('id', myPlayer.id)
       } catch (err) {
         setError(err.message)
       }
@@ -345,7 +345,7 @@ export default function Game() {
       setSelectedColor(discs[0])
       setSelectedCardForCube(null)
       await supabase.from('games').update({ central_board: centralBoard }).eq('id', game.id)
-      await supabase.from('players').update({ pending_take: { slotIndex, discs } }).eq('id', myPlayer.id)
+      await supabase.from('players').update({ pending_take: { slotIndex, discs, remaining: discs } }).eq('id', myPlayer.id)
     } catch (err) {
       setError(err.message)
     }
@@ -381,7 +381,7 @@ export default function Game() {
     if (remainingDiscs.length > 0) return handlePlaceDisc(q, r)
   }
 
-  function handlePlaceDisc(q, r) {
+  async function handlePlaceDisc(q, r) {
     setError(null)
     if (!isMyTurn) return
     if (!selectedColor) return setError('Seleziona prima un disco dalla tua mano')
@@ -395,6 +395,15 @@ export default function Game() {
     setTurnActions([...turnActions, { type: 'disc', q, r, color: selectedColor }])
     setRemainingDiscs(newRemaining)
     setSelectedColor(newRemaining[0] ?? null)
+
+    // "remaining" (a differenza di "discs", che resta l'elenco originale
+    // per il recupero dopo un refresh) si aggiorna a ogni piazzamento:
+    // è quello che mostriamo agli avversari accanto al loro contatore
+    // carte, per vedere live quanti dischi hanno ancora da piazzare.
+    await supabase
+      .from('players')
+      .update({ pending_take: { slotIndex: takenSlotIndex, discs: turnDiscsTaken, remaining: newRemaining } })
+      .eq('id', myPlayer.id)
   }
 
   // Annulla l'ultima azione di questo turno, sia essa un disco o un
@@ -409,8 +418,15 @@ export default function Game() {
     setSelectedCardForCube(null)
 
     if (last.type === 'disc') {
-      setRemainingDiscs([...remainingDiscs, last.color])
+      const newRemaining = [...remainingDiscs, last.color]
+      setRemainingDiscs(newRemaining)
       setSelectedColor(last.color)
+      if (turnDiscsTaken.length > 0) {
+        await supabase
+          .from('players')
+          .update({ pending_take: { slotIndex: takenSlotIndex, discs: turnDiscsTaken, remaining: newRemaining } })
+          .eq('id', myPlayer.id)
+      }
     }
 
     // Se questa carta (completata prima) torna "attiva" annullando il
@@ -450,6 +466,13 @@ export default function Game() {
     setRemainingDiscs(turnDiscsTaken)
     setSelectedColor(turnDiscsTaken[0] ?? null)
     setSelectedCardForCube(null)
+
+    if (turnDiscsTaken.length > 0) {
+      await supabase
+        .from('players')
+        .update({ pending_take: { slotIndex: takenSlotIndex, discs: turnDiscsTaken, remaining: turnDiscsTaken } })
+        .eq('id', myPlayer.id)
+    }
   }
 
   async function handleConfirmTurn() {
@@ -1000,9 +1023,16 @@ export default function Game() {
                       <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>
-                        <span style={turnBadgeStyle(game.turn_order?.[game.current_turn_index] === p.id)}>{p.nickname}</span>{' '}
+                      <p style={{ margin: '0 0 4px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={turnBadgeStyle(game.turn_order?.[game.current_turn_index] === p.id)}>{p.nickname}</span>
                         <span style={{ fontSize: '0.8em', color: '#666' }}>🎴{activeCardCount(p)}/4</span>
+                        {p.pending_take?.remaining?.length > 0 && (
+                          <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}>
+                            {p.pending_take.remaining.map((c, i) => (
+                              <SingleDiscIcon key={i} color={c} size={16} />
+                            ))}
+                          </span>
+                        )}
                       </p>
                       <div
                         style={{
