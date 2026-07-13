@@ -249,26 +249,37 @@ export default function Game() {
   useEffect(() => {
     if (isMyTurn && !wasMyTurnRef.current) {
       playTurnChime()
-
-      // Rete di sicurezza: rileggo direttamente la mia riga dal server
-      // invece di fidarmi solo dell'ultimo aggiornamento realtime
-      // arrivato — capitava che, con più giocatori, la scrittura delle
-      // carte Spirito della Natura di un giocatore "successivo" non
-      // arrivasse in tempo al suo stesso client, facendogli saltare il
-      // popup di scelta al primo turno.
-      if (myPlayer?.id) {
-        supabase
-          .from('players')
-          .select()
-          .eq('id', myPlayer.id)
-          .single()
-          .then(({ data }) => {
-            if (data) setPlayers((prev) => prev.map((p) => (p.id === data.id ? data : p)))
-          })
-      }
     }
     wasMyTurnRef.current = isMyTurn
   }, [isMyTurn])
+
+  // Rete di sicurezza, SEPARATA dal suono sopra e con una chiave di
+  // deduplicazione diversa (turn_count, non un flag "già fatto una
+  // volta"): appena diventa il tuo turno, rileggo la tua riga
+  // direttamente dal server invece di fidarmi solo dell'ultimo
+  // aggiornamento realtime arrivato. Il bug precedente usava lo stesso
+  // flag booleano sia per il suono sia per questa rilettura — per chi
+  // clicca "Avvia partita" e diventa anche il primo giocatore, il flag
+  // poteva "consumarsi" (isMyTurn già true al primissimo render utile,
+  // prima ancora che myPlayer fosse pronto) SENZA eseguire la
+  // rilettura, e non riprovava mai più. Con turn_count come chiave,
+  // ogni nuovo turno è un tentativo indipendente e la rilettura non
+  // può più "saltare" in questo modo.
+  const lastRefetchedTurnRef = useRef(null)
+  useEffect(() => {
+    if (!isMyTurn || !myPlayer?.id || !game?.turn_count) return
+    if (lastRefetchedTurnRef.current === game.turn_count) return
+    lastRefetchedTurnRef.current = game.turn_count
+
+    supabase
+      .from('players')
+      .select()
+      .eq('id', myPlayer.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setPlayers((prev) => prev.map((p) => (p.id === data.id ? data : p)))
+      })
+  }, [isMyTurn, myPlayer?.id, game?.turn_count])
 
   // Se dopo un refresh trovo dischi presi ma non ancora confermati (pag.
   // 4: "presi" e "piazzati" sono azioni separate, il tempo in mezzo non
@@ -396,7 +407,16 @@ export default function Game() {
   }
 
   async function handleStartGame() {
-    const turnOrder = shuffle(players.map((p) => p.id))
+    // Lista giocatori fresca dal server, non lo stato locale: chi clicca
+    // il pulsante potrebbe avere una copia non ancora perfettamente
+    // sincronizzata via realtime — qui vogliamo la fonte di verità.
+    const { data: freshPlayers, error: playersError } = await supabase.from('players').select().eq('game_id', game.id)
+    if (playersError || !freshPlayers?.length) {
+      setError('Errore nel leggere i giocatori della stanza: ' + (playersError?.message ?? 'nessun giocatore trovato'))
+      return
+    }
+
+    const turnOrder = shuffle(freshPlayers.map((p) => p.id))
 
     // Preparazione espansione (pag. 1 manuale espansione): 2 carte
     // Spirito della Natura coperte a ogni giocatore, scritte PRIMA di
@@ -406,7 +426,7 @@ export default function Game() {
     if (game.nature_spirit_extension) {
       const choices = dealNatureSpiritChoices(turnOrder)
       const results = await Promise.all(
-        players.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
+        freshPlayers.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
       )
       const failed = results.find((r) => r.error)
       if (failed) {
