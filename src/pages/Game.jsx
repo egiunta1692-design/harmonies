@@ -20,6 +20,7 @@ import {
   NATURE_SPIRIT_CARDS,
   dealNatureSpiritChoices,
   scoreNatureSpiritCard,
+  shuffle,
   findHabitatMatches,
   placeAnimalCube
 } from '../game-engine'
@@ -238,6 +239,23 @@ export default function Game() {
   useEffect(() => {
     if (isMyTurn && !wasMyTurnRef.current) {
       playTurnChime()
+
+      // Rete di sicurezza: rileggo direttamente la mia riga dal server
+      // invece di fidarmi solo dell'ultimo aggiornamento realtime
+      // arrivato — capitava che, con più giocatori, la scrittura delle
+      // carte Spirito della Natura di un giocatore "successivo" non
+      // arrivasse in tempo al suo stesso client, facendogli saltare il
+      // popup di scelta al primo turno.
+      if (myPlayer?.id) {
+        supabase
+          .from('players')
+          .select()
+          .eq('id', myPlayer.id)
+          .single()
+          .then(({ data }) => {
+            if (data) setPlayers((prev) => prev.map((p) => (p.id === data.id ? data : p)))
+          })
+      }
     }
     wasMyTurnRef.current = isMyTurn
   }, [isMyTurn])
@@ -349,7 +367,7 @@ export default function Game() {
   }
 
   async function handleStartGame() {
-    const turnOrder = players.map((p) => p.id)
+    const turnOrder = shuffle(players.map((p) => p.id))
 
     // Preparazione espansione (pag. 1 manuale espansione): 2 carte
     // Spirito della Natura coperte a ogni giocatore, scritte PRIMA di
