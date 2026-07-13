@@ -1333,7 +1333,18 @@ export default function Game() {
                 <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
               </>
             ) : (
-              <p style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px' }}>🌿 {zoomedCard.card.description}</p>
+              {Array.isArray(zoomedCard.card.description) ? (
+                <div style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px', textAlign: 'left' }}>
+                  🌿
+                  <ul style={{ margin: '4px 0 0', paddingLeft: 20 }}>
+                    {zoomedCard.card.description.map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px' }}>🌿 {zoomedCard.card.description}</p>
+              )}
             )}
             {zoomedCard.entry && (
               <p style={{ fontWeight: 'bold', margin: '0 0 12px' }}>
@@ -1435,7 +1446,9 @@ export default function Game() {
               {NATURE_SPIRIT_CARDS.map((card) => (
                 <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#f3e8ff' }}>
                   <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
+                    {Array.isArray(card.description) ? card.description.join(' ') : card.description}
+                  </div>
                   <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
                 </div>
               ))}
@@ -1480,9 +1493,11 @@ export default function Game() {
                       padding: 14,
                       width: 150,
                       cursor: 'pointer',
-                      background: '#f3e8ff'
+                      background: '#f3e8ff',
+                      position: 'relative'
                     }}
                   >
+                    <CardZoomButton card={card} />
                     <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{card.name}</div>
                     <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
                   </div>

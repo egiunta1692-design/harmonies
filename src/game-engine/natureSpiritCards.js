@@ -42,7 +42,7 @@ export const NATURE_SPIRIT_CARDS = [
   {
     id: 'castoro',
     name: 'Castoro',
-    description: '3 punti per ogni Montagna alta 1 o 2, 1 punto per ogni Montagna alta 3.',
+    description: ['3 punti per ogni Montagna alta 1 o 2.', '1 punto per ogni Montagna alta 3.'],
     // Vertice = montagna centrale a 2 livelli, cubo sulla base destra (grigio singolo) — cubeIndex 1, non il vertice.
     habitat: triangle('grey', 'grey', { color: 'grey', height: 2 }, 1),
     scoreRule: { type: 'mountain_height_tiered', low: { maxHeight: 2, points: 3 }, high: { minHeight: 3, points: 1 } }
@@ -50,7 +50,7 @@ export const NATURE_SPIRIT_CARDS = [
   {
     id: 'gufo',
     name: 'Gufo',
-    description: '3 punti per ogni Albero alto 1 o 2, 1 punto per ogni Albero alto 3.',
+    description: ['3 punti per ogni Albero alto 1 o 2.', '1 punto per ogni Albero alto 3.'],
     habitat: cluster('green', 'green', { color: 'green', height: 3 }, 2),
     scoreRule: { type: 'tree_height_tiered', low: { maxHeight: 2, points: 3 }, high: { minHeight: 3, points: 1 } }
   },
@@ -93,7 +93,10 @@ export const NATURE_SPIRIT_CARDS = [
   {
     id: 'leone',
     name: 'Leone',
-    description: '2 punti per ogni campo (gruppo di dischi gialli) da 1-2 tessere, 10 punti per ogni campo da 3 o più tessere.',
+    description: [
+      '2 punti per ogni campo (gruppo di dischi gialli) da 1 o 2 tessere.',
+      '10 punti per ogni campo da 3 o più tessere.'
+    ],
     habitat: chain([{ color: 'green', height: 2 }, 'yellow', 'yellow'], 1),
     scoreRule: { type: 'field_tiered', low: { maxSize: 2, points: 2 }, high: { minSize: 3, points: 10 } }
   }
