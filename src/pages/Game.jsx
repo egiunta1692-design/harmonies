@@ -35,9 +35,11 @@ function getCardDef(cardId) {
 // Le carte Animale hanno da 2 a 5 cubi; le carte Spirito della Natura
 // ne hanno sempre e solo 1 (vedi natureSpiritCards.js — non hanno un
 // array "points" perché il punteggio si calcola a fine partita, non
-// per cubo piazzato).
+// per cubo piazzato). Difensivo: se cardDef non si risolve (dato
+// corrotto/cardId sconosciuto), ritorna 1 invece di far crashare la
+// pagina — non deve mai più succedere quello che è successo.
 function cardCubeCount(cardDef) {
-  return cardDef.points ? cardDef.points.length : 1
+  return cardDef?.points ? cardDef.points.length : 1
 }
 
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
@@ -295,7 +297,7 @@ export default function Game() {
     ...(myPlayer?.nature_spirit_card ? [myPlayer.nature_spirit_card] : [])
   ]
   const currentBoard = myPlayer?.board_state ? rebuildBoardDraft(myPlayer.board_state, turnActions) : undefined
-  const currentHand = applyHandDeltas(committedHand, turnActions)
+  const currentHand = applyHandDeltas(committedHand, turnActions).filter((c) => getCardDef(c.cardId))
   const myActiveCards = currentHand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId)))
   const hasPlacedDiscThisTurn = turnActions.some((a) => a.type === 'disc')
 
@@ -340,12 +342,32 @@ export default function Game() {
     const hand =
       p.id === myPlayer?.id
         ? currentHand
-        : [...(p.live_preview?.animal_cards ?? p.animal_cards ?? []), ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])]
+        : [...(p.live_preview?.animal_cards ?? p.animal_cards ?? []), ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])].filter(
+            (c) => getCardDef(c.cardId)
+          )
     return hand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId))).length
   }
 
   async function handleStartGame() {
     const turnOrder = players.map((p) => p.id)
+
+    // Preparazione espansione (pag. 1 manuale espansione): 2 carte
+    // Spirito della Natura coperte a ogni giocatore, scritte PRIMA di
+    // aprire la partita — altrimenti c'è una finestra in cui il primo
+    // giocatore si vede già "in turno" (status passato a "playing")
+    // ma senza ancora le carte, e il popup di scelta non compare.
+    if (game.nature_spirit_extension) {
+      const choices = dealNatureSpiritChoices(turnOrder)
+      const results = await Promise.all(
+        players.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
+      )
+      const failed = results.find((r) => r.error)
+      if (failed) {
+        setError('Errore nella distribuzione delle carte Spirito della Natura: ' + failed.error.message)
+        return
+      }
+    }
+
     await supabase
       .from('games')
       .update({
@@ -356,17 +378,6 @@ export default function Game() {
         started_at: new Date().toISOString()
       })
       .eq('id', game.id)
-
-    // Preparazione espansione (pag. 1 manuale espansione): 2 carte
-    // Spirito della Natura coperte a ogni giocatore. La scelta vera e
-    // propria (quale tenere, quale scartare) avviene al primo turno di
-    // ciascun giocatore tramite il popup bloccante — vedi più sotto.
-    if (game.nature_spirit_extension) {
-      const choices = dealNatureSpiritChoices(turnOrder)
-      await Promise.all(
-        players.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
-      )
-    }
   }
 
   // Prende dischi da una casella della plancia centrale. Se avevi già
@@ -1151,7 +1162,9 @@ export default function Game() {
                         {[
                           ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []),
                           ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
-                        ].map((entry, i) => {
+                        ]
+                          .filter((entry) => getCardDef(entry.cardId))
+                          .map((entry, i) => {
                           const card = getCardDef(entry.cardId)
                           const totalCubes = cardCubeCount(card)
                           const isNatureSpirit = !card.points
