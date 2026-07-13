@@ -35,6 +35,22 @@ export async function signOut() {
   if (error) throw error
 }
 
+// Manda l'email con il link per reimpostare la password dimenticata.
+export async function requestPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  })
+  if (error) throw error
+}
+
+// Imposta una nuova password — va chiamata SOLO durante il flusso di
+// recupero (dopo aver cliccato il link ricevuto via email), quando
+// Supabase apre automaticamente una sessione temporanea di recupero.
+export async function updateMyPassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
+}
+
 // Reinvia l'email di conferma, per chi non l'ha ricevuta o l'ha persa.
 export async function resendConfirmationEmail(email) {
   const { error } = await supabase.auth.resend({ type: 'signup', email })

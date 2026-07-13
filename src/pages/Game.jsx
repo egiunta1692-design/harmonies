@@ -7,6 +7,7 @@ import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
 import CentralDiscPile from '../components/CentralDiscPile'
+import Loader from '../components/Loader'
 import { SingleDiscIcon } from '../components/DiscVisual'
 import {
   createEmptyPlayerBoard,
@@ -360,7 +361,7 @@ export default function Game({ profile }) {
     restoredPendingCardRef.current = true
   }, [myPlayer, isMyTurn, animalCardTurn])
 
-  if (!game || !myUserId) return <p>Caricamento partita...</p>
+  if (!game || !myUserId) return <Loader message="Carico la partita..." />
 
   if (playersLoaded && !myPlayer) {
     return (

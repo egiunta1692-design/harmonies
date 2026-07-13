@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
-import { supabase, signUpWithEmail, signInWithEmail, signOut, getMyProfile, createMyProfile, resendConfirmationEmail } from '../lib/supabaseClient'
+import {
+  supabase,
+  signUpWithEmail,
+  signInWithEmail,
+  signOut,
+  getMyProfile,
+  createMyProfile,
+  resendConfirmationEmail,
+  requestPasswordReset,
+  updateMyPassword
+} from '../lib/supabaseClient'
+import Loader from '../components/Loader'
 
 // Avvolge tutta l'app: finché non c'è una sessione autenticata E un
 // profilo (nickname) associato, mostra il modulo di accesso invece dei
@@ -10,15 +21,23 @@ export default function Auth({ children }) {
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [recoveryMode, setRecoveryMode] = useState(false)
 
-  const [mode, setMode] = useState('login') // 'login' | 'register'
+  const [mode, setMode] = useState('login') // 'login' | 'register' | 'forgot'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -27,20 +46,29 @@ export default function Auth({ children }) {
     })
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession)
-      if (!newSession) setProfile(null)
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+      if (!newSession) {
+        setProfile(null)
+        setProfileLoading(true) // pronto per il prossimo login
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
     if (!session) return
-    getMyProfile().then(setProfile)
+    setProfileLoading(true)
+    getMyProfile().then((p) => {
+      setProfile(p)
+      setProfileLoading(false)
+    })
   }, [session])
 
   async function handleAuthSubmit() {
     if (!email.trim() || !password) return setError('Inserisci email e password')
+    if (mode === 'register' && password !== passwordConfirm) return setError('Le due password non coincidono')
     setSubmitting(true)
     setError(null)
     setInfo(null)
@@ -85,6 +113,40 @@ export default function Auth({ children }) {
     }
   }
 
+  async function handleRequestPasswordReset() {
+    if (!email.trim()) return setError('Inserisci la tua email')
+    setSubmitting(true)
+    setError(null)
+    setInfo(null)
+    try {
+      await requestPasswordReset(email.trim())
+      setInfo("Ti abbiamo mandato un'email con il link per reimpostare la password.")
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSetNewPassword() {
+    if (!newPassword) return setError('Inserisci la nuova password')
+    if (newPassword !== newPasswordConfirm) return setError('Le due password non coincidono')
+    if (newPassword.length < 6) return setError('La password deve avere almeno 6 caratteri')
+    setSubmitting(true)
+    setError(null)
+    try {
+      await updateMyPassword(newPassword)
+      setRecoveryMode(false)
+      setNewPassword('')
+      setNewPasswordConfirm('')
+      setInfo('Password aggiornata!')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleCreateProfile() {
     if (!nickname.trim()) return setError('Scegli un nickname')
     setSubmitting(true)
@@ -99,21 +161,63 @@ export default function Auth({ children }) {
     }
   }
 
-  if (loading) return <p style={{ textAlign: 'center', marginTop: '4rem' }}>Caricamento...</p>
+  if (loading) return <Loader message="Verifico l'accesso..." />
 
-  // Passo 1: nessuna sessione — login o registrazione.
+  // Recupero password: priorità su tutto il resto, compare appena
+  // Supabase apre la sessione temporanea di recupero (dopo aver
+  // cliccato il link ricevuto via email).
+  if (recoveryMode) {
+    return (
+      <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
+        <h1>Imposta una nuova password</h1>
+        <label>
+          Nuova password
+          <input
+            type={showNewPassword ? 'text' : 'password'}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+          />
+        </label>
+        <label>
+          Conferma nuova password
+          <input
+            type={showNewPassword ? 'text' : 'password'}
+            value={newPasswordConfirm}
+            onChange={(e) => setNewPasswordConfirm(e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+          />
+        </label>
+        <label style={{ display: 'block', marginBottom: '1rem', fontSize: '0.85rem' }}>
+          <input type="checkbox" checked={showNewPassword} onChange={(e) => setShowNewPassword(e.target.checked)} /> Mostra
+          password
+        </label>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {info && <p style={{ color: 'green' }}>{info}</p>}
+        <button onClick={handleSetNewPassword} disabled={submitting} style={{ width: '100%' }}>
+          {submitting ? '...' : 'Imposta nuova password'}
+        </button>
+      </div>
+    )
+  }
+
+  // Nessuna sessione — login, registrazione, o richiesta di recupero password.
   if (!session) {
     return (
       <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
         <h1>Harmonies online</h1>
-        <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
-          <button onClick={() => setMode('login')} disabled={mode === 'login'}>
-            Accedi
-          </button>
-          <button onClick={() => setMode('register')} disabled={mode === 'register'}>
-            Registrati
-          </button>
-        </div>
+
+        {mode !== 'forgot' && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
+            <button onClick={() => setMode('login')} disabled={mode === 'login'}>
+              Accedi
+            </button>
+            <button onClick={() => setMode('register')} disabled={mode === 'register'}>
+              Registrati
+            </button>
+          </div>
+        )}
+
         <label>
           Email
           <input
@@ -123,31 +227,80 @@ export default function Auth({ children }) {
             style={{ display: 'block', width: '100%', marginBottom: '1rem' }}
           />
         </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '1rem' }}
-          />
-        </label>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {info && <p style={{ color: 'green' }}>{info}</p>}
-        {needsConfirmation && (
-          <button onClick={handleResendConfirmation} disabled={submitting} style={{ width: '100%', marginBottom: '1rem' }}>
-            Reinvia email di conferma
-          </button>
+
+        {mode === 'forgot' ? (
+          <>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {info && <p style={{ color: 'green' }}>{info}</p>}
+            <button onClick={handleRequestPasswordReset} disabled={submitting} style={{ width: '100%', marginBottom: '0.5rem' }}>
+              {submitting ? '...' : 'Invia email di recupero'}
+            </button>
+            <button onClick={() => { setMode('login'); setError(null); setInfo(null) }} style={{ width: '100%' }}>
+              ← Torna al login
+            </button>
+          </>
+        ) : (
+          <>
+            <label>
+              Password
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ display: 'block', width: '100%', marginBottom: mode === 'register' ? '0.5rem' : '0' }}
+              />
+            </label>
+
+            {mode === 'register' && (
+              <label>
+                Conferma password
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+                />
+              </label>
+            )}
+
+            <label style={{ display: 'block', margin: '0.5rem 0 1rem', fontSize: '0.85rem' }}>
+              <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} /> Mostra
+              password
+            </label>
+
+            {mode === 'login' && (
+              <p style={{ margin: '0 0 1rem' }}>
+                <button
+                  onClick={() => { setMode('forgot'); setError(null); setInfo(null) }}
+                  style={{ background: 'none', border: 'none', color: '#4a3f2f', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }}
+                >
+                  Password dimenticata?
+                </button>
+              </p>
+            )}
+
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {info && <p style={{ color: 'green' }}>{info}</p>}
+            {needsConfirmation && (
+              <button onClick={handleResendConfirmation} disabled={submitting} style={{ width: '100%', marginBottom: '1rem' }}>
+                Reinvia email di conferma
+              </button>
+            )}
+            <button onClick={handleAuthSubmit} disabled={submitting} style={{ width: '100%' }}>
+              {submitting ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
+            </button>
+          </>
         )}
-        <button onClick={handleAuthSubmit} disabled={submitting} style={{ width: '100%' }}>
-          {submitting ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
-        </button>
       </div>
     )
   }
 
-  // Passo 2: sessione presente ma nessun profilo — scelta nickname
-  // (una tantum, resta legato all'account per sempre).
+  // Sessione presente, profilo ancora in verifica — loader, MAI il
+  // modulo "scegli nickname" per errore durante questo controllo.
+  if (profileLoading) return <Loader message="Carico il tuo profilo..." />
+
+  // Sessione presente ma nessun profilo — scelta nickname (una tantum,
+  // resta legato all'account per sempre).
   if (!profile) {
     return (
       <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
@@ -172,6 +325,6 @@ export default function Auth({ children }) {
     )
   }
 
-  // Passo 3: tutto pronto — resto dell'app.
+  // Tutto pronto — resto dell'app.
   return children({ profile, signOut })
 }
