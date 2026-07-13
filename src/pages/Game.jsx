@@ -1192,6 +1192,16 @@ export default function Game() {
                       <CardZoomButton card={card} entry={entry} />
                       <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                       {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
+                      {isNatureSpirit &&
+                        (Array.isArray(card.description) ? (
+                          <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
+                            {card.description.map((line, j) => (
+                              <li key={j}>{line}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                        ))}
                       <div style={{ fontSize: 10, color: '#999' }}>
                         {entry.cubesPlaced}/{totalCubes}
                         {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
@@ -1276,6 +1286,16 @@ export default function Game() {
                             <CardZoomButton card={card} entry={entry} />
                             <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                             {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
+                            {isNatureSpirit &&
+                              (Array.isArray(card.description) ? (
+                                <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
+                                  {card.description.map((line, j) => (
+                                    <li key={j}>{line}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                              ))}
                             <div style={{ fontSize: 10, color: '#999' }}>
                               {entry.cubesPlaced}/{totalCubes}
                               {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
@@ -1441,9 +1461,15 @@ export default function Game() {
               {NATURE_SPIRIT_CARDS.map((card) => (
                 <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#f3e8ff' }}>
                   <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
-                    {Array.isArray(card.description) ? card.description.join(' ') : card.description}
-                  </div>
+                  {Array.isArray(card.description) ? (
+                    <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
+                      {card.description.map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                  )}
                   <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
                 </div>
               ))}
