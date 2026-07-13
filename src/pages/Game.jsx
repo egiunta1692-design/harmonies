@@ -1332,19 +1332,17 @@ export default function Game() {
                 <p style={{ fontSize: '1.2rem', color: '#666', margin: '0 0 4px' }}>{zoomedCard.card.points.join(' / ')}</p>
                 <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
               </>
+            ) : Array.isArray(zoomedCard.card.description) ? (
+              <div style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px', textAlign: 'left' }}>
+                🌿
+                <ul style={{ margin: '4px 0 0', paddingLeft: 20 }}>
+                  {zoomedCard.card.description.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              </div>
             ) : (
-              {Array.isArray(zoomedCard.card.description) ? (
-                <div style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px', textAlign: 'left' }}>
-                  🌿
-                  <ul style={{ margin: '4px 0 0', paddingLeft: 20 }}>
-                    {zoomedCard.card.description.map((line, i) => (
-                      <li key={i}>{line}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px' }}>🌿 {zoomedCard.card.description}</p>
-              )}
+              <p style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px' }}>🌿 {zoomedCard.card.description}</p>
             )}
             {zoomedCard.entry && (
               <p style={{ fontWeight: 'bold', margin: '0 0 12px' }}>
