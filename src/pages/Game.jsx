@@ -328,7 +328,7 @@ export default function Game() {
   // paesaggio — quindi conta card.points.length per ogni carta in mano
   // a chiunque, indipendentemente da cubesPlaced.
   const cubesUsed = players.reduce(
-    (sum, p) => sum + (p.animal_cards ?? []).reduce((s, c) => s + getAnimalCard(c.cardId).points.length, 0),
+    (sum, p) => sum + (p.animal_cards ?? []).reduce((s, c) => s + (getAnimalCard(c.cardId)?.points.length ?? 0), 0),
     0
   )
 
@@ -701,7 +701,7 @@ export default function Game() {
     if (idx === -1) return
 
     const newRow = game.animal_row.map((id, i) => (i === idx ? null : id))
-    const newHand = [...committedHand, { cardId, cubesPlaced: 0 }]
+    const newHand = [...(myPlayer.animal_cards ?? []), { cardId, cubesPlaced: 0 }]
 
     await supabase.from('players').update({ animal_cards: newHand, pending_animal_card: { cardId, slotIndex: idx } }).eq('id', myPlayer.id)
     await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
@@ -723,7 +723,7 @@ export default function Game() {
 
     const { data: freshGame } = await supabase.from('games').select().eq('id', game.id).single()
     const newRow = freshGame.animal_row.map((id, i) => (i === animalCardTurn.slotIndex ? animalCardTurn.cardId : id))
-    const newHand = committedHand.filter((c) => !(c.cardId === animalCardTurn.cardId && c.cubesPlaced === 0))
+    const newHand = (myPlayer.animal_cards ?? []).filter((c) => !(c.cardId === animalCardTurn.cardId && c.cubesPlaced === 0))
 
     await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
     await supabase.from('players').update({ animal_cards: newHand, pending_animal_card: null }).eq('id', myPlayer.id)
