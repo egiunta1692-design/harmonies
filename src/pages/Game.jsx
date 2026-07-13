@@ -1476,10 +1476,6 @@ export default function Game() {
         >
           <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 480, textAlign: 'center' }}>
             <h2 style={{ margin: '0 0 8px' }}>🌿 Scegli la tua carta Spirito della Natura</h2>
-            <p style={{ color: '#666', margin: '0 0 20px' }}>
-              Tieni una delle due carte coperte, l'altra torna nella scatola per sempre — questa scelta è
-              definitiva e non si può annullare.
-            </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
               {myPlayer.nature_spirit_choices.map((cardId) => {
                 const card = getNatureSpiritCard(cardId)
@@ -1500,6 +1496,15 @@ export default function Game() {
                     <CardZoomButton card={card} />
                     <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{card.name}</div>
                     <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
+                    {Array.isArray(card.description) ? (
+                      <ul style={{ margin: '8px 0 0', paddingLeft: 16, fontSize: 11, color: '#666', textAlign: 'left' }}>
+                        {card.description.map((line, i) => (
+                          <li key={i}>{line}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p style={{ margin: '8px 0 0', fontSize: 11, color: '#666' }}>{card.description}</p>
+                    )}
                   </div>
                 )
               })}
