@@ -1,4 +1,5 @@
 import { DiscStackVisual, stackTopCapY, DISC_STROKE, DISC_STROKE_WIDTH } from './DiscVisual'
+import { getNatureSpiritCard } from '../game-engine'
 
 const HEX_SIZE = 32
 
@@ -93,7 +94,7 @@ export default function HexBoard({
                 y={topCapY - cubeSize - capRy * 0.2}
                 width={cubeSize}
                 height={cubeSize}
-                fill="#F59E0B"
+                fill={getNatureSpiritCard(cell.animalCube.cardId) ? '#fff' : '#F59E0B'}
                 stroke={DISC_STROKE}
                 strokeWidth={DISC_STROKE_WIDTH}
               />

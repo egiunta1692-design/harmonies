@@ -150,6 +150,7 @@ export default function Game() {
   const [error, setError] = useState(null)
   const [zoomedCard, setZoomedCard] = useState(null) // { card, entry? } per il popup di ingrandimento
   const [showAllCards, setShowAllCards] = useState(false) // debug: verifica visiva di tutte le carte
+  const [showAllNatureSpirit, setShowAllNatureSpirit] = useState(false)
   const [confirmingTurn, setConfirmingTurn] = useState(false)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
@@ -856,13 +857,13 @@ export default function Game() {
       }))
     : []
 
-  const cardBoxStyle = (selected) => ({
+  const cardBoxStyle = (selected, isNatureSpirit = false) => ({
     border: selected ? '2px solid #d97706' : '1px solid #ccc',
     borderRadius: 6,
     padding: 6,
     minWidth: 92,
     flexShrink: 0,
-    background: '#fff',
+    background: isNatureSpirit ? '#f3e8ff' : '#fff',
     position: 'relative'
   })
 
@@ -952,6 +953,18 @@ export default function Game() {
                   🎴{game.animal_deck.length}
                 </span>{' '}
                 · 🟨{66 - cubesUsed}
+                {game.nature_spirit_extension && (
+                  <>
+                    {' · '}
+                    <span
+                      onClick={() => setShowAllNatureSpirit(true)}
+                      style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                      title="Vedi tutte le carte Spirito della Natura"
+                    >
+                      🌿{11 - players.filter((p) => p.nature_spirit_card).length}
+                    </span>
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -1169,7 +1182,7 @@ export default function Game() {
                       key={i}
                       onClick={() => !completed && handleSelectCardForCube(entry)}
                       style={{
-                        ...cardBoxStyle(selectedCardForCube === entry),
+                        ...cardBoxStyle(selectedCardForCube === entry, isNatureSpirit),
                         minWidth: 0,
                         opacity: completed ? 0.6 : 1,
                         cursor: completed ? 'default' : 'pointer'
@@ -1180,14 +1193,12 @@ export default function Game() {
                         {card.name}
                         {isNatureSpirit ? ' 🌿' : ''}
                       </div>
-                      <div style={{ fontSize: 11, color: '#666' }}>
-                        {isNatureSpirit ? 'punteggio a fine partita' : card.points.join('/')}
-                      </div>
+                      {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                       <div style={{ fontSize: 10, color: '#999' }}>
                         {entry.cubesPlaced}/{totalCubes}
                         {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                       </div>
-                      <HabitatIcon habitat={card.habitat} />
+                      <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
                     </div>
                   )
                 })}
@@ -1262,20 +1273,18 @@ export default function Game() {
                           const isNatureSpirit = !card.points
                           const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
                           return (
-                            <div key={i} style={{ ...cardBoxStyle(false), minWidth: 0 }}>
+                            <div key={i} style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}>
                             <CardZoomButton card={card} entry={entry} />
                             <div style={{ fontWeight: 'bold', fontSize: 12 }}>
                               {card.name}
                               {isNatureSpirit ? ' 🌿' : ''}
                             </div>
-                            <div style={{ fontSize: 11, color: '#666' }}>
-                              {isNatureSpirit ? 'punteggio a fine partita' : card.points.join('/')}
-                            </div>
+                            {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                             <div style={{ fontSize: 10, color: '#999' }}>
                               {entry.cubesPlaced}/{totalCubes}
                               {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                             </div>
-                            <HabitatIcon habitat={card.habitat} />
+                            <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
                           </div>
                           )
                         })}
@@ -1324,9 +1333,7 @@ export default function Game() {
                 <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
               </>
             ) : (
-              <p style={{ fontSize: '1rem', color: '#666', margin: '0 0 12px' }}>
-                🌿 Spirito della Natura — punteggio a fine partita, vedi regolamento
-              </p>
+              <p style={{ fontSize: '0.95rem', color: '#666', margin: '0 0 12px' }}>🌿 {zoomedCard.card.description}</p>
             )}
             {zoomedCard.entry && (
               <p style={{ fontWeight: 'bold', margin: '0 0 12px' }}>
@@ -1338,7 +1345,7 @@ export default function Game() {
             )}
             <div style={{ display: 'flex', justifyContent: 'center', padding: '30px 0 110px' }}>
               <div style={{ transform: 'scale(3)' }}>
-                <HabitatIcon habitat={zoomedCard.card.habitat} />
+                <HabitatIcon habitat={zoomedCard.card.habitat} cubeColor={zoomedCard.card.points ? undefined : '#fff'} />
               </div>
             </div>
             <button onClick={() => setZoomedCard(null)} style={{ position: 'relative', zIndex: 1 }}>
@@ -1393,6 +1400,50 @@ export default function Game() {
         </div>
       )}
 
+      {showAllNatureSpirit && (
+        <div
+          onClick={() => setShowAllNatureSpirit(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              width: '100%',
+              maxWidth: 900,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h2 style={{ margin: 0 }}>🌿 Tutte le carte Spirito della Natura ({NATURE_SPIRIT_CARDS.length})</h2>
+              <button onClick={() => setShowAllNatureSpirit(false)}>Chiudi</button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {NATURE_SPIRIT_CARDS.map((card) => (
+                <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#f3e8ff' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                  <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Scelta Spirito della Natura: bloccante, niente sfondo cliccabile
           né pulsante Chiudi. Compare da sola (anche dopo un refresh)
           finché non hai scelto — la condizione dipende solo dai dati
@@ -1428,11 +1479,12 @@ export default function Game() {
                       borderRadius: 10,
                       padding: 14,
                       width: 150,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      background: '#f3e8ff'
                     }}
                   >
                     <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{card.name}</div>
-                    <HabitatIcon habitat={card.habitat} />
+                    <HabitatIcon habitat={card.habitat} cubeColor="#fff" />
                   </div>
                 )
               })}

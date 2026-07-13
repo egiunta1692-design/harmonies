@@ -112,7 +112,7 @@ function BaseOptionsCylinder({ cx, capY, discW, capRy, sideH }) {
   )
 }
 
-function CellStack({ cx, cy, stack, hasCube }) {
+function CellStack({ cx, cy, stack, hasCube, cubeColor }) {
   const n = stack.length
   const totalH = (n - 1) * ADVANCE + SIDE_H + CAP_RY * 2
   const topCapY = cy - totalH / 2 + CAP_RY
@@ -133,7 +133,7 @@ function CellStack({ cx, cy, stack, hasCube }) {
           y={topCapY - CUBE_SIZE - CAP_RY * 0.2}
           width={CUBE_SIZE}
           height={CUBE_SIZE}
-          fill={CUBE_COLOR}
+          fill={cubeColor}
           stroke={DISC_STROKE}
           strokeWidth={DISC_STROKE_WIDTH}
         />
@@ -143,8 +143,9 @@ function CellStack({ cx, cy, stack, hasCube }) {
 }
 
 // habitat: array di { dq, dr, color, height?, cube? }, formato di
-// game-engine/animalCards.js.
-export default function HabitatIcon({ habitat }) {
+// game-engine/animalCards.js. cubeColor: ambra per le carte Animale
+// (default), bianco per le carte Spirito della Natura.
+export default function HabitatIcon({ habitat, cubeColor = CUBE_COLOR }) {
   if (!habitat) {
     return <div style={{ fontSize: 10, color: '#c00', width: 70 }}>pattern non disponibile</div>
   }
@@ -164,10 +165,11 @@ export default function HabitatIcon({ habitat }) {
         {positions.map((p, i) => (
           <g key={i}>
             <polygon points={hexPoints(p.x, p.y, SIZE - 1)} fill="#f1efe8" stroke="rgba(0,0,0,0.15)" strokeWidth={0.5} />
-            <CellStack cx={p.x} cy={p.y} stack={stackForSpec(p)} hasCube={p.cube} />
+            <CellStack cx={p.x} cy={p.y} stack={stackForSpec(p)} hasCube={p.cube} cubeColor={cubeColor} />
           </g>
         ))}
       </svg>
+
     </div>
   )
 }
