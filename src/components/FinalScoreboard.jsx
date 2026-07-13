@@ -1,21 +1,23 @@
-import { scorePlayerBoard } from '../game-engine'
+import { scorePlayerBoard, scoreNatureSpiritCard } from '../game-engine'
 
 const cellStyle = { border: '1px solid #ccc', padding: '4px 10px', textAlign: 'left' }
 
 export default function FinalScoreboard({ players, boardMode }) {
   const waterLabel = boardMode === 'isole' ? 'Isole' : 'Fiume'
+  const hasNatureSpirit = players.some((p) => p.nature_spirit_card)
 
   const rows = players.map((p) => {
     const score = scorePlayerBoard(p.board_state, p.animal_cards ?? [], boardMode)
+    const spiritBonus = scoreNatureSpiritCard(p.board_state, p.nature_spirit_card)
     const cubesPlaced = (p.animal_cards ?? []).reduce((sum, c) => sum + c.cubesPlaced, 0)
-    return { nickname: p.nickname, score, cubesPlaced }
+    return { nickname: p.nickname, score, spiritBonus, cubesPlaced, total: score.total + spiritBonus }
   })
 
   // Ordinamento e spareggio da regolamento (pag. 7): punteggio totale,
   // poi numero di cubi Animale piazzati; parità persistente = vittoria condivisa.
-  rows.sort((a, b) => b.score.total - a.score.total || b.cubesPlaced - a.cubesPlaced)
+  rows.sort((a, b) => b.total - a.total || b.cubesPlaced - a.cubesPlaced)
   const top = rows[0]
-  const winners = top ? rows.filter((r) => r.score.total === top.score.total && r.cubesPlaced === top.cubesPlaced) : []
+  const winners = top ? rows.filter((r) => r.total === top.total && r.cubesPlaced === top.cubesPlaced) : []
 
   return (
     <div>
@@ -31,6 +33,7 @@ export default function FinalScoreboard({ players, boardMode }) {
             <th style={cellStyle}>{waterLabel}</th>
             <th style={cellStyle}>Paesaggio</th>
             <th style={cellStyle}>Animali</th>
+            {hasNatureSpirit && <th style={cellStyle}>🌿 Spirito</th>}
             <th style={cellStyle}>Cubi</th>
             <th style={cellStyle}>Totale</th>
           </tr>
@@ -51,8 +54,9 @@ export default function FinalScoreboard({ players, boardMode }) {
                 <td style={cellStyle}>{r.score.water}</td>
                 <td style={cellStyle}>{r.score.landscapeTotal}</td>
                 <td style={cellStyle}>{r.score.animals}</td>
+                {hasNatureSpirit && <td style={cellStyle}>{r.spiritBonus}</td>}
                 <td style={cellStyle}>{r.cubesPlaced}</td>
-                <td style={cellStyle}>{r.score.total}</td>
+                <td style={cellStyle}>{r.total}</td>
               </tr>
             )
           })}

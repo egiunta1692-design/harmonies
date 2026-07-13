@@ -14,6 +14,7 @@ export default function Lobby() {
   const [nickname, setNickname] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [boardMode, setBoardMode] = useState('standard')
+  const [natureSpiritExtension, setNatureSpiritExtension] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -35,7 +36,8 @@ export default function Lobby() {
           bag: initial.bag,
           animal_deck: initial.animalDeck,
           animal_row: initial.animalRow,
-          board_mode: boardMode
+          board_mode: boardMode,
+          nature_spirit_extension: natureSpiritExtension
         })
         .select()
         .single()
@@ -140,6 +142,15 @@ export default function Lobby() {
           onChange={() => setBoardMode('isole')}
         />{' '}
         Isole (lato B — punteggio Isole)
+      </label>
+
+      <label style={{ display: 'block', marginBottom: '1rem' }}>
+        <input
+          type="checkbox"
+          checked={natureSpiritExtension}
+          onChange={(e) => setNatureSpiritExtension(e.target.checked)}
+        />{' '}
+        🌿 Carte Spirito della Natura (estensione)
       </label>
 
       <button onClick={handleCreate} disabled={loading} style={{ width: '100%', marginBottom: '1rem' }}>

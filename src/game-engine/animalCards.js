@@ -25,71 +25,7 @@
 // - cube: true sulla casella dove va posizionato il cubo Animale
 // ============================================================
 
-function spec(s) {
-  return typeof s === 'string' ? { color: s } : s
-}
-
-// Fila dritta di N caselle in una direzione, con il cubo sulla cella
-// all'indice indicato. Ogni elemento può essere una stringa colore
-// (es. 'green') o un oggetto { color, height } per specificare l'altezza.
-function chain(cells, cubeIndex) {
-  return cells.map((c, i) => {
-    const s = spec(c)
-    const out = { dq: i, dr: 0, ...s }
-    if (i === cubeIndex) out.cube = true
-    return out
-  })
-}
-
-// Cluster a triangolo: due caselle di base adiacenti + una "in cima",
-// adiacente a entrambe. Usato per i pattern che nell'icona appaiono
-// come un piccolo triangolo invece di una fila dritta.
-// Cluster a triangolo: due caselle di base (non adiacenti tra loro) +
-// il vertice, centrato sopra entrambe e adiacente a entrambe — come
-// mostrato nelle icone reali (es. Pinguini, Pavoni, Martin Pescatore):
-// due dischi affiancati alla stessa altezza, il terzo incastrato sopra
-// nel mezzo. Le coordinate sono calcolate per la geometria esagonale
-// flat-top: baseSinistra=(-1,1) e baseDestra=(1,0) sono entrambe
-// adiacenti al vertice=(0,0) ma NON adiacenti tra loro.
-function triangle(a, b, top, cubeIndex) {
-  const positions = [
-    { dq: -1, dr: 1 }, // base sinistra
-    { dq: 1, dr: 0 }, // base destra
-    { dq: 0, dr: 0 } // vertice, centrato sopra le due basi
-  ]
-  return [a, b, top].map((c, i) => {
-    const s = spec(c)
-    const out = { ...positions[i], ...s }
-    if (i === cubeIndex) out.cube = true
-    return out
-  })
-}
-
-// Grappolo compatto: 3 caselle TUTTE reciprocamente adiacenti tra loro
-// (a differenza di triangle(), dove le due basi non si toccano). Da
-// non confondere con il triangolo del Toporagno — qui non c'è nessun
-// "vuoto" al centro, le 3 caselle formano un blocco pieno.
-function cluster(a, b, c, cubeIndex) {
-  const positions = [
-    { dq: 0, dr: 0 },
-    { dq: 1, dr: 0 },
-    { dq: 1, dr: -1 }
-  ]
-  return [a, b, c].map((el, i) => {
-    const s = spec(el)
-    const out = { ...positions[i], ...s }
-    if (i === cubeIndex) out.cube = true
-    return out
-  })
-}
-
-// Coppia di 2 caselle adiacenti, cubo sempre sulla seconda.
-function pair(colorA, colorB, { heightA, heightB } = {}) {
-  return [
-    { dq: 0, dr: 0, color: colorA, height: heightA },
-    { dq: 1, dr: 0, color: colorB, height: heightB, cube: true }
-  ]
-}
+import { chain, triangle, cluster, pair } from './habitatPatterns.js'
 
 export const ANIMAL_CARDS = [
   // ---- Coppie a 2 tessere: alta confidenza ----

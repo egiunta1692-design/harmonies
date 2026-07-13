@@ -14,18 +14,48 @@ const ISLAND_POINTS = 5
 const RIVER_POINTS = { 1: 0, 2: 2, 3: 5, 4: 8, 5: 11, 6: 15 }
 const RIVER_EXTRA_PER_DISC_BEYOND_6 = 4
 
-function getCell(board, q, r) {
+export function getCell(board, q, r) {
   return board.cells[key(q, r)]
 }
 
-function topColor(cell) {
+export function topColor(cell) {
   return cell?.discs?.[cell.discs.length - 1] ?? null
 }
 
-function boardNeighbors(board, q, r) {
+export function boardNeighbors(board, q, r) {
   return neighbors(q, r)
     .map(({ q: nq, r: nr }) => ({ q: nq, r: nr, cell: getCell(board, nq, nr) }))
     .filter((n) => n.cell) // solo vicini che esistono davvero sulla plancia
+}
+
+// Trova tutti i gruppi connessi di caselle che soddisfano matchFn(cell,q,r)
+// — generalizza il flood-fill già usato per Campi/Fiume/Isole, riusato
+// anche dal punteggio delle carte Spirito della Natura.
+export function findConnectedGroups(board, matchFn) {
+  const visited = new Set()
+  const groups = []
+  for (const { q, r } of boardCells(board)) {
+    const k = key(q, r)
+    if (visited.has(k)) continue
+    const cell = getCell(board, q, r)
+    if (!matchFn(cell, q, r)) continue
+
+    const group = [{ q, r }]
+    visited.add(k)
+    let i = 0
+    while (i < group.length) {
+      const cur = group[i++]
+      for (const n of boardNeighbors(board, cur.q, cur.r)) {
+        const nk = key(n.q, n.r)
+        if (!visited.has(nk) && matchFn(n.cell, n.q, n.r)) {
+          visited.add(nk)
+          group.push({ q: n.q, r: n.r })
+        }
+      }
+    }
+    groups.push(group)
+  }
+  return groups
 }
 
 // ------------------------------------------------------------

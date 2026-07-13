@@ -16,9 +16,29 @@ import {
   placeDisc,
   getAnimalCard,
   ANIMAL_CARDS,
+  getNatureSpiritCard,
+  NATURE_SPIRIT_CARDS,
+  dealNatureSpiritChoices,
+  scoreNatureSpiritCard,
   findHabitatMatches,
   placeAnimalCube
 } from '../game-engine'
+
+// Trova la definizione di una carta indipendentemente dal tipo
+// (Animale o Spirito della Natura) — il motore di piazzamento cubi
+// non distingue le due, quindi l'interfaccia non deve farlo a mano
+// in ogni punto in cui serve leggere nome/punti/habitat di una carta.
+function getCardDef(cardId) {
+  return getAnimalCard(cardId) ?? getNatureSpiritCard(cardId)
+}
+
+// Le carte Animale hanno da 2 a 5 cubi; le carte Spirito della Natura
+// ne hanno sempre e solo 1 (vedi natureSpiritCards.js — non hanno un
+// array "points" perché il punteggio si calcola a fine partita, non
+// per cubo piazzato).
+function cardCubeCount(cardDef) {
+  return cardDef.points ? cardDef.points.length : 1
+}
 
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
 // azioni (dischi E cubi) fatte in questo turno sopra la plancia
@@ -265,10 +285,18 @@ export default function Game() {
   // "currentHand"/"currentBoard" = committed + le azioni di questo turno
   // non ancora confermate. Il resto dell'interfaccia usa SEMPRE queste
   // ultime due, mai direttamente myPlayer.board_state/animal_cards.
-  const committedHand = myPlayer?.animal_cards ?? []
+  // "committedHand" combina le carte Animale con l'eventuale carta
+  // Spirito della Natura scelta (vivono in due colonne separate sul
+  // database, ma per il resto della logica di turno — conteggio 4
+  // attive, piazzamento cubo, annullamenti — si comportano allo stesso
+  // modo, quindi le tratto come un'unica "mano" qui in avanti).
+  const committedHand = [
+    ...(myPlayer?.animal_cards ?? []),
+    ...(myPlayer?.nature_spirit_card ? [myPlayer.nature_spirit_card] : [])
+  ]
   const currentBoard = myPlayer?.board_state ? rebuildBoardDraft(myPlayer.board_state, turnActions) : undefined
   const currentHand = applyHandDeltas(committedHand, turnActions)
-  const myActiveCards = currentHand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length)
+  const myActiveCards = currentHand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId)))
   const hasPlacedDiscThisTurn = turnActions.some((a) => a.type === 'disc')
 
   // Conta le carte Animale attive di un qualsiasi giocatore: per me
@@ -309,8 +337,11 @@ export default function Game() {
   }
 
   function activeCardCount(p) {
-    const hand = p.id === myPlayer?.id ? currentHand : p.live_preview?.animal_cards ?? p.animal_cards ?? []
-    return hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
+    const hand =
+      p.id === myPlayer?.id
+        ? currentHand
+        : [...(p.live_preview?.animal_cards ?? p.animal_cards ?? []), ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])]
+    return hand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId))).length
   }
 
   async function handleStartGame() {
@@ -325,6 +356,17 @@ export default function Game() {
         started_at: new Date().toISOString()
       })
       .eq('id', game.id)
+
+    // Preparazione espansione (pag. 1 manuale espansione): 2 carte
+    // Spirito della Natura coperte a ogni giocatore. La scelta vera e
+    // propria (quale tenere, quale scartare) avviene al primo turno di
+    // ciascun giocatore tramite il popup bloccante — vedi più sotto.
+    if (game.nature_spirit_extension) {
+      const choices = dealNatureSpiritChoices(turnOrder)
+      await Promise.all(
+        players.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
+      )
+    }
   }
 
   // Prende dischi da una casella della plancia centrale. Se avevi già
@@ -457,7 +499,7 @@ export default function Game() {
     // ai suoi eventuali cubi, altrimenti resteresti con 5 carte attive.
     if (animalCardTurn) {
       const hand = applyHandDeltas(committedHand, newActions)
-      const activeCount = hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
+      const activeCount = hand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId))).length
       if (activeCount > 4) {
         newActions = await undoAnimalCardTake(newActions)
       }
@@ -508,11 +550,15 @@ export default function Game() {
 
     setConfirmingTurn(true)
     try {
+      const finalAnimalCards = currentHand.filter((c) => getAnimalCard(c.cardId))
+      const finalNatureSpirit = currentHand.find((c) => getNatureSpiritCard(c.cardId)) ?? null
+
       await supabase
         .from('players')
         .update({
           board_state: currentBoard,
-          animal_cards: currentHand,
+          animal_cards: finalAnimalCards,
+          nature_spirit_card: finalNatureSpirit,
           pending_take: null,
           pending_animal_card: null,
           live_preview: null
@@ -596,6 +642,21 @@ export default function Game() {
 
   // --- Carte Animale ---
 
+  // Scelta della carta Spirito della Natura (espansione, pag. 1): al
+  // primo turno, tra le 2 carte coperte, se ne tiene 1 e l'altra torna
+  // nella scatola per sempre. È definitiva — non esiste un pulsante
+  // "annulla" per questa scelta, a differenza delle carte Animale.
+  async function handleChooseNatureSpirit(cardId) {
+    if (!isMyTurn || !myPlayer?.nature_spirit_choices) return
+    await supabase
+      .from('players')
+      .update({
+        nature_spirit_card: { cardId, cubesPlaced: 0 },
+        nature_spirit_choices: null
+      })
+      .eq('id', myPlayer.id)
+  }
+
   async function handleTakeAnimalCard(cardId) {
     setError(null)
     if (!isMyTurn) return setError('Non è il tuo turno')
@@ -656,7 +717,7 @@ export default function Game() {
       setSelectedCardForCube(null) // clic sulla stessa carta: deseleziona
       return
     }
-    const cardDef = getAnimalCard(handEntry.cardId)
+    const cardDef = getCardDef(handEntry.cardId)
     if (!cardDef.habitat) {
       return setError(`Il pattern Habitat di "${cardDef.name}" non è ancora disponibile in questa versione`)
     }
@@ -671,7 +732,7 @@ export default function Game() {
   async function handlePlaceAnimalCubeAt(q, r) {
     setError(null)
     if (!isMyTurn) return
-    const cardDef = getAnimalCard(selectedCardForCube.cardId)
+    const cardDef = getCardDef(selectedCardForCube.cardId)
     const matches = findHabitatMatches(currentBoard, cardDef)
     const match = matches.find((m) => m.cubeQ === q && m.cubeR === r)
     if (!match) return setError("Qui non si forma l'habitat richiesto da questa carta")
@@ -686,7 +747,7 @@ export default function Game() {
   }
 
   const cubeTargetCells = selectedCardForCube
-    ? findHabitatMatches(currentBoard, getAnimalCard(selectedCardForCube.cardId)).map((m) => ({
+    ? findHabitatMatches(currentBoard, getCardDef(selectedCardForCube.cardId)).map((m) => ({
         q: m.cubeQ,
         r: m.cubeR
       }))
@@ -772,6 +833,7 @@ export default function Game() {
             <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza {game.room_code}</h1>
             <span style={{ color: '#666', fontSize: '0.85rem' }}>
               Modalità: {game.board_mode === 'isole' ? 'Isole' : 'Standard (Fiume)'}
+              {game.nature_spirit_extension ? ' · 🌿 (estensione)' : ''}
             </span>
             {(game.status === 'playing' || game.status === 'finished') && (
               <span style={{ color: '#666', fontSize: '0.85rem' }}>
@@ -942,7 +1004,7 @@ export default function Game() {
               {error && <p style={{ color: 'red', margin: '4px 0 0', fontSize: '0.85rem' }}>{error}</p>}
               {selectedCardForCube && (
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#d97706' }}>
-                  Cubo Animale selezionato ({getAnimalCard(selectedCardForCube.cardId).name}): clicca una casella
+                  Cubo Animale selezionato ({getCardDef(selectedCardForCube.cardId).name}): clicca una casella
                   gialla sulla plancia, oppure clicca di nuovo la carta per annullare.
                 </p>
               )}
@@ -994,9 +1056,11 @@ export default function Game() {
                 }}
               >
                 {currentHand.map((entry, i) => {
-                  const card = getAnimalCard(entry.cardId)
-                  const completed = entry.cubesPlaced >= card.points.length
-                  const currentPoints = entry.cubesPlaced === 0 ? 0 : card.points[entry.cubesPlaced - 1]
+                  const card = getCardDef(entry.cardId)
+                  const totalCubes = cardCubeCount(card)
+                  const completed = entry.cubesPlaced >= totalCubes
+                  const isNatureSpirit = !card.points
+                  const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
                   return (
                     <div
                       key={i}
@@ -1009,10 +1073,16 @@ export default function Game() {
                       }}
                     >
                       <CardZoomButton card={card} entry={entry} />
-                      <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                      <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                      <div style={{ fontWeight: 'bold', fontSize: 12 }}>
+                        {card.name}
+                        {isNatureSpirit ? ' 🌿' : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#666' }}>
+                        {isNatureSpirit ? 'punteggio a fine partita' : card.points.join('/')}
+                      </div>
                       <div style={{ fontSize: 10, color: '#999' }}>
-                        {entry.cubesPlaced}/{card.points.length} — {currentPoints} pt
+                        {entry.cubesPlaced}/{totalCubes}
+                        {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                       </div>
                       <HabitatIcon habitat={card.habitat} />
                     </div>
@@ -1078,16 +1148,27 @@ export default function Game() {
                           alignContent: 'start'
                         }}
                       >
-                        {(p.live_preview?.animal_cards ?? p.animal_cards ?? []).map((entry, i) => {
-                          const card = getAnimalCard(entry.cardId)
-                          const currentPoints = entry.cubesPlaced === 0 ? 0 : card.points[entry.cubesPlaced - 1]
+                        {[
+                          ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []),
+                          ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
+                        ].map((entry, i) => {
+                          const card = getCardDef(entry.cardId)
+                          const totalCubes = cardCubeCount(card)
+                          const isNatureSpirit = !card.points
+                          const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
                           return (
                             <div key={i} style={{ ...cardBoxStyle(false), minWidth: 0 }}>
                             <CardZoomButton card={card} entry={entry} />
-                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                            <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>
+                              {card.name}
+                              {isNatureSpirit ? ' 🌿' : ''}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#666' }}>
+                              {isNatureSpirit ? 'punteggio a fine partita' : card.points.join('/')}
+                            </div>
                             <div style={{ fontSize: 10, color: '#999' }}>
-                              {entry.cubesPlaced}/{card.points.length} — {currentPoints} pt
+                              {entry.cubesPlaced}/{totalCubes}
+                              {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                             </div>
                             <HabitatIcon habitat={card.habitat} />
                           </div>
@@ -1132,12 +1213,22 @@ export default function Game() {
             }}
           >
             <h2 style={{ margin: '0 0 6px' }}>{zoomedCard.card.name}</h2>
-            <p style={{ fontSize: '1.2rem', color: '#666', margin: '0 0 4px' }}>{zoomedCard.card.points.join(' / ')}</p>
-            <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
+            {zoomedCard.card.points ? (
+              <>
+                <p style={{ fontSize: '1.2rem', color: '#666', margin: '0 0 4px' }}>{zoomedCard.card.points.join(' / ')}</p>
+                <p style={{ fontSize: '0.9rem', color: '#999', margin: '0 0 12px' }}>{zoomedCard.card.points.length} cubi</p>
+              </>
+            ) : (
+              <p style={{ fontSize: '1rem', color: '#666', margin: '0 0 12px' }}>
+                🌿 Spirito della Natura — punteggio a fine partita, vedi regolamento
+              </p>
+            )}
             {zoomedCard.entry && (
               <p style={{ fontWeight: 'bold', margin: '0 0 12px' }}>
-                {zoomedCard.entry.cubesPlaced}/{zoomedCard.card.points.length} cubi piazzati
-                {zoomedCard.entry.cubesPlaced > 0 && ` — ${zoomedCard.card.points[zoomedCard.entry.cubesPlaced - 1]} pt`}
+                {zoomedCard.entry.cubesPlaced}/{cardCubeCount(zoomedCard.card)} cubi piazzati
+                {zoomedCard.card.points && zoomedCard.entry.cubesPlaced > 0
+                  ? ` — ${zoomedCard.card.points[zoomedCard.entry.cubesPlaced - 1]} pt`
+                  : ''}
               </p>
             )}
             <div style={{ display: 'flex', justifyContent: 'center', padding: '30px 0 110px' }}>
@@ -1192,6 +1283,54 @@ export default function Game() {
                   <HabitatIcon habitat={card.habitat} />
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scelta Spirito della Natura: bloccante, niente sfondo cliccabile
+          né pulsante Chiudi. Compare da sola (anche dopo un refresh)
+          finché non hai scelto — la condizione dipende solo dai dati
+          del server (nature_spirit_choices), mai da uno stato locale. */}
+      {isMyTurn && myPlayer?.nature_spirit_choices?.length === 2 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: 20
+          }}
+        >
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 480, textAlign: 'center' }}>
+            <h2 style={{ margin: '0 0 8px' }}>🌿 Scegli la tua carta Spirito della Natura</h2>
+            <p style={{ color: '#666', margin: '0 0 20px' }}>
+              Tieni una delle due carte coperte, l'altra torna nella scatola per sempre — questa scelta è
+              definitiva e non si può annullare.
+            </p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+              {myPlayer.nature_spirit_choices.map((cardId) => {
+                const card = getNatureSpiritCard(cardId)
+                return (
+                  <div
+                    key={cardId}
+                    onClick={() => handleChooseNatureSpirit(cardId)}
+                    style={{
+                      border: '2px solid #ccc',
+                      borderRadius: 10,
+                      padding: 14,
+                      width: 150,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{card.name}</div>
+                    <HabitatIcon habitat={card.habitat} />
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

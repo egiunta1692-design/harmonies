@@ -23,6 +23,7 @@ create table if not exists games (
   final_round boolean not null default false,          -- pag. 7: è scattato l'ultimo giro?
   final_round_reason text,                             -- 'plancia' oppure 'sacchetto'
   final_round_trigger_player_id uuid,                   -- chi l'ha fatto scattare
+  nature_spirit_extension boolean not null default false, -- espansione "Carte Spirito della Natura" attiva per questa partita
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -37,7 +38,8 @@ create table if not exists players (
   nickname text not null,
   board_state jsonb not null default '{}'::jsonb,  -- griglia esagonale con i dischi piazzati
   animal_cards jsonb not null default '[]'::jsonb, -- carte in mano + cubi rimasti da piazzare
-  nature_spirit_card jsonb,                        -- opzionale, fase avanzata
+  nature_spirit_card jsonb,                        -- { cardId, cubesPlaced } la carta Spirito della Natura scelta (0 o 1 cubo, mai di più)
+  nature_spirit_choices jsonb,                      -- [cardIdA, cardIdB] le 2 carte coperte, finché non scegli (poi torna null)
   pending_take jsonb,                               -- { slotIndex, discs, remaining } se hai preso dischi non ancora confermati (sopravvive a un refresh, remaining è live per gli avversari)
   pending_animal_card jsonb,                         -- { cardId, slotIndex } se hai preso una carta Animale non ancora confermata (sopravvive a un refresh)
   live_preview jsonb,                                -- { board_state, animal_cards } anteprima delle mosse di questo turno non ancora confermate, per farle vedere live agli avversari
