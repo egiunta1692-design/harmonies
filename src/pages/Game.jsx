@@ -43,6 +43,16 @@ function cardCubeCount(cardDef) {
   return cardDef?.points ? cardDef.points.length : 1
 }
 
+// Garanzia strutturale: non importa DA DOVE arrivi una entry duplicata
+// (bug di scrittura, dati vecchi, race condition) — l'interfaccia non
+// deve MAI mostrare due caselle per lo stesso cardId. Tiene l'ultima
+// occorrenza incontrata (quella con più informazioni aggiornate).
+function dedupeByCardId(entries) {
+  const map = new Map()
+  for (const e of entries) map.set(e.cardId, e)
+  return [...map.values()]
+}
+
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
 // azioni (dischi E cubi) fatte in questo turno sopra la plancia
 // confermata. Dischi e cubi condividono la stessa cronologia perché il
@@ -310,10 +320,15 @@ export default function Game() {
   // database, ma per il resto della logica di turno — conteggio 4
   // attive, piazzamento cubo, annullamenti — si comportano allo stesso
   // modo, quindi le tratto come un'unica "mano" qui in avanti).
-  const committedHand = [
-    ...(myPlayer?.animal_cards ?? []),
+  // Il .filter su animal_cards è una pulizia difensiva: un bug ormai
+  // corretto poteva scrivere per errore la carta Spirito della Natura
+  // anche dentro animal_cards, causando carte duplicate in stanze già
+  // esistenti — qui la escludiamo comunque, autocorreggendo la vista
+  // finché quella riga non viene riscritta pulita al prossimo turno.
+  const committedHand = dedupeByCardId([
+    ...(myPlayer?.animal_cards ?? []).filter((c) => !getNatureSpiritCard(c.cardId)),
     ...(myPlayer?.nature_spirit_card ? [myPlayer.nature_spirit_card] : [])
-  ]
+  ])
   const currentBoard = myPlayer?.board_state ? rebuildBoardDraft(myPlayer.board_state, turnActions) : undefined
   const currentHand = applyHandDeltas(committedHand, turnActions).filter((c) => getCardDef(c.cardId))
   const myActiveCards = currentHand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId)))
@@ -360,9 +375,10 @@ export default function Game() {
     const hand =
       p.id === myPlayer?.id
         ? currentHand
-        : [...(p.live_preview?.animal_cards ?? p.animal_cards ?? []), ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])].filter(
-            (c) => getCardDef(c.cardId)
-          )
+        : dedupeByCardId([
+            ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []).filter((c) => !getNatureSpiritCard(c.cardId)),
+            ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
+          ]).filter((c) => getCardDef(c.cardId))
     return hand.filter((c) => c.cubesPlaced < cardCubeCount(getCardDef(c.cardId))).length
   }
 
@@ -703,8 +719,10 @@ export default function Game() {
     const newRow = game.animal_row.map((id, i) => (i === idx ? null : id))
     const newHand = [...(myPlayer.animal_cards ?? []), { cardId, cubesPlaced: 0 }]
 
-    await supabase.from('players').update({ animal_cards: newHand, pending_animal_card: { cardId, slotIndex: idx } }).eq('id', myPlayer.id)
-    await supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
+    await Promise.all([
+      supabase.from('players').update({ animal_cards: newHand, pending_animal_card: { cardId, slotIndex: idx } }).eq('id', myPlayer.id),
+      supabase.from('games').update({ animal_row: newRow }).eq('id', game.id)
+    ])
     setAnimalCardTurn({ cardId, slotIndex: idx })
   }
 
@@ -1177,10 +1195,10 @@ export default function Game() {
                           alignContent: 'start'
                         }}
                       >
-                        {[
-                          ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []),
+                        {dedupeByCardId([
+                          ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []).filter((c) => !getNatureSpiritCard(c.cardId)),
                           ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
-                        ]
+                        ])
                           .filter((entry) => getCardDef(entry.cardId))
                           .map((entry, i) => {
                           const card = getCardDef(entry.cardId)
