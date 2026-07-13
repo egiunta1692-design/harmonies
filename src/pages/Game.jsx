@@ -18,7 +18,6 @@ import {
   ANIMAL_CARDS,
   getNatureSpiritCard,
   NATURE_SPIRIT_CARDS,
-  dealNatureSpiritChoices,
   scoreNatureSpiritCard,
   shuffle,
   findHabitatMatches,
@@ -281,6 +280,40 @@ export default function Game() {
       })
   }, [isMyTurn, myPlayer?.id, game?.turn_count])
 
+  // Pesca le proprie 2 carte Spirito della Natura dal mazzo condiviso,
+  // al proprio (di ciascun giocatore) primo turno — mai prima. Scrive
+  // solo sulla propria riga "players" e su quella condivisa "games":
+  // MAI sulla riga di un altro giocatore, a differenza del precedente
+  // tentativo (chi cliccava "Avvia partita" provava a scrivere le
+  // carte per tutti, ma le regole di sicurezza permettono a un utente
+  // di scrivere solo sulla propria riga — quella scrittura veniva
+  // silenziosamente ignorata per tutti gli altri giocatori).
+  const drawingNatureSpiritRef = useRef(false)
+  useEffect(() => {
+    if (!isMyTurn || !myPlayer?.id || !game?.id) return
+    if (!game.nature_spirit_extension) return
+    if (myPlayer.nature_spirit_card || myPlayer.nature_spirit_choices) return // già pescato o già scelto
+    if (drawingNatureSpiritRef.current) return
+    drawingNatureSpiritRef.current = true
+
+    ;(async () => {
+      const { data: freshGame } = await supabase.from('games').select('nature_spirit_deck').eq('id', game.id).single()
+      const deck = freshGame?.nature_spirit_deck ?? []
+      if (deck.length < 2) return // mazzo esaurito: caso raro, nessuna carta da pescare
+
+      const drawn = deck.slice(0, 2)
+      const remaining = deck.slice(2)
+      const { error: writeError } = await supabase.from('players').update({ nature_spirit_choices: drawn }).eq('id', myPlayer.id)
+      if (writeError) {
+        drawingNatureSpiritRef.current = false // qualcosa è andato storto: consenti un nuovo tentativo
+        return
+      }
+      await supabase.from('games').update({ nature_spirit_deck: remaining }).eq('id', game.id)
+      // Da qui in poi lascio il flag a true: non ritento più in questa
+      // sessione, anche se myPlayer locale non si è ancora aggiornato.
+    })()
+  }, [isMyTurn, myPlayer?.id, myPlayer?.nature_spirit_card, myPlayer?.nature_spirit_choices, game?.id, game?.nature_spirit_extension])
+
   // Se dopo un refresh trovo dischi presi ma non ancora confermati (pag.
   // 4: "presi" e "piazzati" sono azioni separate, il tempo in mezzo non
   // è mai stato salvato da nessuna parte prima d'ora), li recupero qui.
@@ -418,23 +451,6 @@ export default function Game() {
 
     const turnOrder = shuffle(freshPlayers.map((p) => p.id))
 
-    // Preparazione espansione (pag. 1 manuale espansione): 2 carte
-    // Spirito della Natura coperte a ogni giocatore, scritte PRIMA di
-    // aprire la partita — altrimenti c'è una finestra in cui il primo
-    // giocatore si vede già "in turno" (status passato a "playing")
-    // ma senza ancora le carte, e il popup di scelta non compare.
-    if (game.nature_spirit_extension) {
-      const choices = dealNatureSpiritChoices(turnOrder)
-      const results = await Promise.all(
-        freshPlayers.map((p) => supabase.from('players').update({ nature_spirit_choices: choices[p.id] }).eq('id', p.id))
-      )
-      const failed = results.find((r) => r.error)
-      if (failed) {
-        setError('Errore nella distribuzione delle carte Spirito della Natura: ' + failed.error.message)
-        return
-      }
-    }
-
     await supabase
       .from('games')
       .update({
@@ -442,7 +458,8 @@ export default function Game() {
         turn_order: turnOrder,
         current_turn_index: 0,
         turn_count: 1,
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        ...(game.nature_spirit_extension ? { nature_spirit_deck: shuffle(NATURE_SPIRIT_CARDS.map((c) => c.id)) } : {})
       })
       .eq('id', game.id)
   }

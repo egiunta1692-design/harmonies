@@ -24,6 +24,7 @@ create table if not exists games (
   final_round_reason text,                             -- 'plancia' oppure 'sacchetto'
   final_round_trigger_player_id uuid,                   -- chi l'ha fatto scattare
   nature_spirit_extension boolean not null default false, -- espansione "Carte Spirito della Natura" attiva per questa partita
+  nature_spirit_deck jsonb,                                -- mazzo condiviso, mescolato all'avvio: ogni giocatore pesca le proprie 2 carte al SUO primo turno (mai scritture incrociate tra giocatori, bloccate da RLS)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
