@@ -86,21 +86,3 @@ export function placeAnimalCube(playerBoard, q, r, cardId) {
     }
   }
 }
-
-// Rimuove un cubo Animale da una casella. Il regolamento (pag. 6) dice
-// che il piazzamento è definitivo — questa funzione esiste SOLO per
-// permettere all'interfaccia di annullare un click per sbaglio entro lo
-// stesso turno, non per un "annulla" libero a partita in corso.
-export function removeAnimalCube(playerBoard, q, r) {
-  const k = key(q, r)
-  const cell = playerBoard.cells[k]
-  if (!cell?.animalCube) throw new Error('Nessun cubo Animale su questa casella')
-
-  return {
-    ...playerBoard,
-    cells: {
-      ...playerBoard.cells,
-      [k]: { ...cell, animalCube: null }
-    }
-  }
-}

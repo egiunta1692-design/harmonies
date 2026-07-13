@@ -10,7 +10,6 @@
 // ============================================================
 
 import { ANIMAL_CARDS } from './animalCards.js'
-import { NATURE_SPIRIT_CARDS } from './natureSpiritCards.js'
 
 // Composizione del sacchetto dischi (manuale, pag. 2)
 export const DISC_COUNTS = {
@@ -73,24 +72,16 @@ export { createBoardShape, boardCells } from './hexGrid.js'
 
 // Carte e cubi Animale
 export { ANIMAL_CARDS, getAnimalCard } from './animalCards.js'
-export { findHabitatMatches, placeAnimalCube, removeAnimalCube } from './habitat.js'
+export { findHabitatMatches, placeAnimalCube } from './habitat.js'
 
 // Carte Spirito della Natura (espansione) — usano lo stesso motore di
 // riconoscimento pattern/piazzamento cubo delle carte Animale sopra.
+// Il mazzo (NATURE_SPIRIT_CARDS) è condiviso via games.nature_spirit_deck:
+// ogni giocatore pesca le proprie 2 carte da solo, al proprio primo
+// turno (vedi Game.jsx) — niente distribuzione centralizzata, che
+// richiederebbe scritture incrociate tra righe player bloccate da RLS.
 export { NATURE_SPIRIT_CARDS, getNatureSpiritCard } from './natureSpiritCards.js'
 export { scoreNatureSpiritCard } from './natureSpiritScoring.js'
-
-// Preparazione (espansione, pag. 1): mescola le carte Spirito della
-// Natura e ne assegna 2 coperte a ogni giocatore. Ritorna
-// { [playerId]: [cardIdA, cardIdB] }.
-export function dealNatureSpiritChoices(playerIds) {
-  const deck = shuffle(NATURE_SPIRIT_CARDS.map((c) => c.id))
-  const choices = {}
-  for (const playerId of playerIds) {
-    choices[playerId] = deck.splice(0, 2)
-  }
-  return choices
-}
 
 // Prende i 3 dischi da una casella della plancia centrale.
 // Ritorna { discs, centralBoard } con la casella svuotata.

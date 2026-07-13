@@ -64,22 +64,23 @@ Torna in VS Code:
 2. Clicca **"New query"**.
 3. Apri in VS Code il file `supabase/schema.sql`, copia **tutto** il contenuto.
 4. Incollalo nell'SQL Editor di Supabase e clicca **"Run"** (in basso a destra, o **Ctrl+Enter**).
-5. Dovresti vedere "Success. No rows returned" — significa che le tabelle `games`, `players` e `moves` sono state create, con la sincronizzazione in tempo reale già attiva.
+5. Dovresti vedere "Success. No rows returned" — significa che le tabelle `profiles`, `games` e `players` sono state create, con la sincronizzazione in tempo reale già attiva.
 
 Se vuoi verificare: menu laterale → **Table Editor**, dovresti vedere le 3 tabelle.
 
-> Nota: lo script include anche dei `grant` espliciti (`games`, `players`, `moves` → ruolo `authenticated`). Sono necessari perché dal 30 maggio 2026 Supabase non espone più le tabelle alla Data API per default: senza questi `grant`, il client riceverebbe un errore `42501: permission denied` anche con RLS e policy corrette. Se durante la creazione del progetto hai spuntato **"Enable automatic RLS"**, nessun problema: è compatibile con questo script, aggiunge solo una rete di sicurezza in più per eventuali tabelle future.
+> Nota: lo script include anche dei `grant` espliciti (`profiles`, `games`, `players` → ruolo `authenticated`). Sono necessari perché dal 30 maggio 2026 Supabase non espone più le tabelle alla Data API per default: senza questi `grant`, il client riceverebbe un errore `42501: permission denied` anche con RLS e policy corrette.
 
-## 6. Abilita il login anonimo
+> Se hai un database creato PRIMA di questa versione consolidata dello schema (con le vecchie tabelle `moves`, colonne `score`/`joined_at`/`updated_at`, o la vecchia funzione `claim_player`), esegui anche `supabase/cleanup.sql` per allinearlo — aggiunge il grant mancante su `profiles` e rimuove tutto ciò che non è più usato dall'app.
 
-Il progetto fa entrare i giocatori senza email/password (solo un nickname), quindi serve attivare un'opzione:
+## 6. Attiva la conferma email
 
-1. Nella dashboard Supabase, menu laterale → **Authentication**.
-2. Vai nella sezione **Sign In / Providers** (oppure **Configuration**, a seconda della versione della dashboard).
-3. Cerca l'opzione **"Allow anonymous sign-ins"** e attivala (toggle su ON).
-4. Salva.
+Il progetto richiede una registrazione via email+password per ogni giocatore:
 
-> Nota: la UI di Supabase cambia ogni tanto posizione a queste voci. Se non la trovi dove indicato, cerca "anonymous" nella barra di ricerca in alto nella dashboard — c'è sempre una scorciatoia che ti porta dritto all'impostazione.
+1. Nella dashboard Supabase, menu laterale → **Authentication** → **Providers** (o **Sign In / Providers**, a seconda della versione).
+2. Apri **Email** e assicurati che **"Confirm email"** sia attivo — senza conferma, chiunque potrebbe registrarsi con un'email inventata.
+3. Vai poi in **Authentication → URL Configuration** e imposta **Site URL** sul dominio reale della tua app (es. quello di Vercel) — è l'indirizzo a cui punteranno i link nelle email di conferma/recupero password. Aggiungi lo stesso dominio anche alla lista **Redirect URLs**.
+
+> Nota: la UI di Supabase cambia ogni tanto posizione a queste voci. Se non le trovi dove indicato, usa la barra di ricerca in alto nella dashboard.
 
 ## 7. Avvia il progetto
 
@@ -90,14 +91,16 @@ npm run dev
 Vedrai un output tipo `Local: http://localhost:5173/`. **Ctrl+click** su quel link per aprirlo nel browser (o copialo manualmente).
 
 Da qui puoi:
-- Inserire un nickname e cliccare **"Crea una nuova stanza"** → ti genera un codice stanza e ti porta nella pagina di gioco (ancora vuota di regole, solo lo scheletro).
-- Aprire un'altra scheda/browser, inserire un altro nickname, e usare **"Entra in una stanza"** con il codice generato prima, per simulare un secondo giocatore.
+- Registrarti con email+password, confermare l'email (controlla la posta), scegliere un nickname (unico per tutto il sito — sarà il tuo identificativo in ogni partita).
+- Da Lobby, cliccare **"Crea una nuova stanza"** → ti genera un codice stanza e ti porta nella pagina di gioco.
+- Aprire un'altra scheda/browser (o la finestra in incognito), registrare un secondo account con un'altra email, e usare **"Entra in una stanza"** con il codice generato prima, per simulare un secondo giocatore.
 
 Se tutto funziona, vedrai la stessa `room_code` e la lista giocatori aggiornarsi in tempo reale tra le due schede: è la prova che Realtime funziona.
 
 ## Cosa funziona adesso
 
-- Creazione/accesso stanza, login anonimo, sincronizzazione realtime.
+- Registrazione via email con conferma obbligatoria, recupero password, profilo con nickname unico per tutto il sito.
+- Creazione/accesso stanza, sincronizzazione realtime, partite multiple in contemporanea con elenco nella Lobby.
 - Rientro sicuro in una stanza già joinata (es. dopo un refresh) senza errori di riga duplicata.
 - Avvio partita: assegna l'ordine dei turni; ogni giocatore ha già una plancia vuota fin da quando è entrato.
 - Presa dei 3 dischi da una casella della plancia centrale, con possibilità di **cambiare casella** finché non hai piazzato un disco (i dischi tornano al loro posto).
