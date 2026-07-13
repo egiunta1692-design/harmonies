@@ -258,23 +258,6 @@ export default function Game() {
     restoredPendingCardRef.current = true
   }, [myPlayer, isMyTurn, animalCardTurn])
 
-  // Trasmette agli avversari un'anteprima live delle mosse di questo
-  // turno non ancora confermate (dischi piazzati + cubi Animale, con
-  // relativo conteggio sulla carta) — si attiva da sola a ogni
-  // modifica di turnActions, niente da richiamare manualmente nei
-  // singoli gestori di piazzamento/annullamento.
-  useEffect(() => {
-    if (!isMyTurn || !myPlayer?.board_state) return
-    const preview =
-      turnActions.length === 0
-        ? null
-        : {
-            board_state: rebuildBoardDraft(myPlayer.board_state, turnActions),
-            animal_cards: applyHandDeltas(myPlayer.animal_cards ?? [], turnActions)
-          }
-    supabase.from('players').update({ live_preview: preview }).eq('id', myPlayer.id)
-  }, [turnActions, isMyTurn, myPlayer?.board_state, myPlayer?.animal_cards])
-
   if (!game || !myUserId) return <p>Caricamento partita...</p>
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
@@ -305,6 +288,25 @@ export default function Game() {
     acc[color] = (acc[color] || 0) + 1
     return acc
   }, {})
+
+  // Trasmette agli avversari un'anteprima live delle mosse di questo
+  // turno non ancora confermate (dischi piazzati + cubi Animale).
+  // Richiamata esplicitamente da ogni gestore che modifica turnActions,
+  // con il valore delle azioni appena calcolato (mai lo stato React,
+  // che si aggiorna in modo asincrono ed è disponibile solo al
+  // prossimo render).
+  async function syncLivePreview(actions) {
+    if (!myPlayer?.board_state) return
+    const preview =
+      actions.length === 0
+        ? null
+        : {
+            board_state: rebuildBoardDraft(myPlayer.board_state, actions),
+            animal_cards: applyHandDeltas(myPlayer.animal_cards ?? [], actions)
+          }
+    const { error: syncError } = await supabase.from('players').update({ live_preview: preview }).eq('id', myPlayer.id)
+    if (syncError) console.error("Errore nel sincronizzare l'anteprima live:", syncError)
+  }
 
   function activeCardCount(p) {
     const hand = p.id === myPlayer?.id ? currentHand : p.live_preview?.animal_cards ?? p.animal_cards ?? []
@@ -409,7 +411,8 @@ export default function Game() {
     const idx = remainingDiscs.indexOf(selectedColor)
     const newRemaining = [...remainingDiscs.slice(0, idx), ...remainingDiscs.slice(idx + 1)]
 
-    setTurnActions([...turnActions, { type: 'disc', q, r, color: selectedColor }])
+    const newActions = [...turnActions, { type: 'disc', q, r, color: selectedColor }]
+    setTurnActions(newActions)
     setRemainingDiscs(newRemaining)
     setSelectedColor(newRemaining[0] ?? null)
 
@@ -421,6 +424,7 @@ export default function Game() {
       .from('players')
       .update({ pending_take: { slotIndex: takenSlotIndex, discs: turnDiscsTaken, remaining: newRemaining } })
       .eq('id', myPlayer.id)
+    await syncLivePreview(newActions)
   }
 
   // Annulla l'ultima azione di questo turno, sia essa un disco o un
@@ -460,6 +464,7 @@ export default function Game() {
     }
 
     setTurnActions(newActions)
+    await syncLivePreview(newActions)
   }
 
   // "Tutto il turno" significa davvero tutto: dischi, cubi, E la carta
@@ -490,6 +495,8 @@ export default function Game() {
         .update({ pending_take: { slotIndex: takenSlotIndex, discs: turnDiscsTaken, remaining: turnDiscsTaken } })
         .eq('id', myPlayer.id)
     }
+
+    await syncLivePreview([])
   }
 
   async function handleConfirmTurn() {
@@ -639,6 +646,7 @@ export default function Game() {
     if (!isMyTurn) return
     const remainingActions = await undoAnimalCardTake(turnActions)
     setTurnActions(remainingActions)
+    await syncLivePreview(remainingActions)
   }
 
   function handleSelectCardForCube(handEntry) {
@@ -668,11 +676,13 @@ export default function Game() {
     const match = matches.find((m) => m.cubeQ === q && m.cubeR === r)
     if (!match) return setError("Qui non si forma l'habitat richiesto da questa carta")
 
-    setTurnActions([
+    const newActions = [
       ...turnActions,
       { type: 'cube', q, r, cardId: cardDef.id, cubesPlacedBefore: selectedCardForCube.cubesPlaced }
-    ])
+    ]
+    setTurnActions(newActions)
     setSelectedCardForCube(null)
+    await syncLivePreview(newActions)
   }
 
   const cubeTargetCells = selectedCardForCube
