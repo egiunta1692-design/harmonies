@@ -950,7 +950,7 @@ export default function Game() {
                 👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
                 {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) ·{' '}
                 <span onClick={() => setShowAllCards(true)} style={{ cursor: 'pointer', textDecoration: 'underline dotted' }} title="Vedi tutte le carte Animale">
-                  🎴{game.animal_deck.length}
+                  🐾{game.animal_deck.length}
                 </span>{' '}
                 · 🟨{66 - cubesUsed}
                 {game.nature_spirit_extension && (
@@ -1056,6 +1056,7 @@ export default function Game() {
                           <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                           <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
                           <HabitatIcon habitat={card.habitat} />
+                          <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>🐾</span>
                         </div>
                       )
                     })}
@@ -1189,16 +1190,14 @@ export default function Game() {
                       }}
                     >
                       <CardZoomButton card={card} entry={entry} />
-                      <div style={{ fontWeight: 'bold', fontSize: 12 }}>
-                        {card.name}
-                        {isNatureSpirit ? ' 🌿' : ''}
-                      </div>
+                      <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                       {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                       <div style={{ fontSize: 10, color: '#999' }}>
                         {entry.cubesPlaced}/{totalCubes}
                         {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                       </div>
                       <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
+                      <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
                     </div>
                   )
                 })}
@@ -1275,16 +1274,14 @@ export default function Game() {
                           return (
                             <div key={i} style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}>
                             <CardZoomButton card={card} entry={entry} />
-                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>
-                              {card.name}
-                              {isNatureSpirit ? ' 🌿' : ''}
-                            </div>
+                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                             {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                             <div style={{ fontSize: 10, color: '#999' }}>
                               {entry.cubesPlaced}/{totalCubes}
                               {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                             </div>
                             <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
+                            <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
                           </div>
                           )
                         })}
@@ -1392,7 +1389,7 @@ export default function Game() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h2 style={{ margin: 0 }}>Tutte le carte Animale ({ANIMAL_CARDS.length})</h2>
+              <h2 style={{ margin: 0 }}>🐾 Tutte le carte Animale ({ANIMAL_CARDS.length})</h2>
               <button onClick={() => setShowAllCards(false)}>Chiudi</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
