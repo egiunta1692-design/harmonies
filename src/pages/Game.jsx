@@ -258,6 +258,23 @@ export default function Game() {
     restoredPendingCardRef.current = true
   }, [myPlayer, isMyTurn, animalCardTurn])
 
+  // Trasmette agli avversari un'anteprima live delle mosse di questo
+  // turno non ancora confermate (dischi piazzati + cubi Animale, con
+  // relativo conteggio sulla carta) — si attiva da sola a ogni
+  // modifica di turnActions, niente da richiamare manualmente nei
+  // singoli gestori di piazzamento/annullamento.
+  useEffect(() => {
+    if (!isMyTurn || !myPlayer?.board_state) return
+    const preview =
+      turnActions.length === 0
+        ? null
+        : {
+            board_state: rebuildBoardDraft(myPlayer.board_state, turnActions),
+            animal_cards: applyHandDeltas(myPlayer.animal_cards ?? [], turnActions)
+          }
+    supabase.from('players').update({ live_preview: preview }).eq('id', myPlayer.id)
+  }, [turnActions, isMyTurn, myPlayer?.board_state, myPlayer?.animal_cards])
+
   if (!game || !myUserId) return <p>Caricamento partita...</p>
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
@@ -290,7 +307,7 @@ export default function Game() {
   }, {})
 
   function activeCardCount(p) {
-    const hand = p.id === myPlayer?.id ? currentHand : p.animal_cards ?? []
+    const hand = p.id === myPlayer?.id ? currentHand : p.live_preview?.animal_cards ?? p.animal_cards ?? []
     return hand.filter((c) => c.cubesPlaced < getAnimalCard(c.cardId).points.length).length
   }
 
@@ -486,7 +503,13 @@ export default function Game() {
     try {
       await supabase
         .from('players')
-        .update({ board_state: currentBoard, animal_cards: currentHand, pending_take: null, pending_animal_card: null })
+        .update({
+          board_state: currentBoard,
+          animal_cards: currentHand,
+          pending_take: null,
+          pending_animal_card: null,
+          live_preview: null
+        })
         .eq('id', myPlayer.id)
 
       // Azzero lo stato locale QUI, prima di endTurn (che fa altre
@@ -1020,7 +1043,7 @@ export default function Game() {
                 {otherPlayers.map((p) => (
                   <div key={p.id} style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flexShrink: 0, width: 260 }}>
-                      <HexBoard boardState={p.board_state} compact maxHeightVh={26} />
+                      <HexBoard boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                       <p style={{ margin: '0 0 4px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -1045,7 +1068,7 @@ export default function Game() {
                           alignContent: 'start'
                         }}
                       >
-                        {(p.animal_cards ?? []).map((entry, i) => {
+                        {(p.live_preview?.animal_cards ?? p.animal_cards ?? []).map((entry, i) => {
                           const card = getAnimalCard(entry.cardId)
                           const currentPoints = entry.cubesPlaced === 0 ? 0 : card.points[entry.cubesPlaced - 1]
                           return (
