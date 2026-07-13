@@ -48,6 +48,7 @@ create table if not exists players (
   joined_at timestamptz not null default now(),
   unique (game_id, user_id)
 );
+create unique index if not exists players_game_nickname_unique on players (game_id, lower(trim(nickname)));
 
 -- ============================================================
 -- MOVES: log delle azioni (utile per debug, undo, replay futuro)

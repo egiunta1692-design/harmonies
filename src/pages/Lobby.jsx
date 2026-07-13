@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, ensureAnonymousSession } from '../lib/supabaseClient'
-import { createInitialGameState, createEmptyPlayerBoard } from '../game-engine'
+import { supabase } from '../lib/supabaseClient'
+import { joinGame } from '../lib/joinGame'
+import { createInitialGameState } from '../game-engine'
 
 function randomRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // niente caratteri ambigui
@@ -10,21 +11,51 @@ function randomRoomCode() {
   return code
 }
 
-export default function Lobby() {
-  const [nickname, setNickname] = useState('')
+export default function Lobby({ profile, onSignOut }) {
   const [joinCode, setJoinCode] = useState('')
   const [boardMode, setBoardMode] = useState('standard')
   const [natureSpiritExtension, setNatureSpiritExtension] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [myGames, setMyGames] = useState(null) // null = ancora in caricamento
   const navigate = useNavigate()
 
+  // Le mie partite: si può giocare a più partite contemporaneamente,
+  // quindi qui mostriamo tutte quelle a cui risulti seduto (in attesa
+  // o in corso), ognuna con un link diretto per rientrarci.
+  useEffect(() => {
+    let cancelled = false
+    async function loadMyGames() {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error: gamesError } = await supabase
+        .from('players')
+        .select('game_id, games(id, room_code, status, board_mode, nature_spirit_extension, turn_count, created_at)')
+        .eq('user_id', user.id)
+        .order('created_at', { referencedTable: 'games', ascending: false })
+
+      if (cancelled) return
+      if (gamesError) {
+        setMyGames([])
+        return
+      }
+      // Filtro le partite finite: non servono più link diretti per
+      // quelle, e teniamo la lista corta e utile.
+      setMyGames((data ?? []).map((row) => row.games).filter((g) => g && g.status !== 'finished'))
+    }
+    loadMyGames()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   async function handleCreate() {
-    if (!nickname.trim()) return setError('Inserisci un nickname')
     setLoading(true)
     setError(null)
     try {
-      const session = await ensureAnonymousSession()
       const initial = createInitialGameState()
 
       const { data: game, error: gameError } = await supabase
@@ -43,13 +74,7 @@ export default function Lobby() {
         .single()
       if (gameError) throw gameError
 
-      const { error: playerError } = await supabase.from('players').insert({
-        game_id: game.id,
-        user_id: session.user.id,
-        nickname,
-        board_state: createEmptyPlayerBoard(boardMode)
-      })
-      if (playerError) throw playerError
+      await joinGame({ gameId: game.id, boardMode, profile })
 
       navigate(`/game/${game.id}`)
     } catch (err) {
@@ -60,13 +85,10 @@ export default function Lobby() {
   }
 
   async function handleJoin() {
-    if (!nickname.trim()) return setError('Inserisci un nickname')
     if (!joinCode.trim()) return setError('Inserisci il codice stanza')
     setLoading(true)
     setError(null)
     try {
-      const session = await ensureAnonymousSession()
-
       const { data: game, error: gameError } = await supabase
         .from('games')
         .select()
@@ -74,26 +96,7 @@ export default function Lobby() {
         .single()
       if (gameError) throw new Error('Stanza non trovata')
 
-      // Se questo utente (stesso login anonimo, es. dopo un refresh della
-      // pagina) è già seduto in questa stanza, non tento un altro insert
-      // (fallirebbe per via del vincolo di unicità game_id+user_id): lo
-      // riporto semplicemente dentro alla partita.
-      const { data: existing } = await supabase
-        .from('players')
-        .select()
-        .eq('game_id', game.id)
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-
-      if (!existing) {
-        const { error: playerError } = await supabase.from('players').insert({
-          game_id: game.id,
-          user_id: session.user.id,
-          nickname,
-          board_state: createEmptyPlayerBoard(game.board_mode)
-        })
-        if (playerError) throw playerError
-      }
+      await joinGame({ gameId: game.id, boardMode: game.board_mode, profile })
 
       navigate(`/game/${game.id}`)
     } catch (err) {
@@ -106,7 +109,7 @@ export default function Lobby() {
   return (
     <div
       style={{
-        maxWidth: 360,
+        maxWidth: 420,
         margin: '4rem auto',
         fontFamily: 'sans-serif',
         border: '1px solid #4a3f2f',
@@ -115,12 +118,47 @@ export default function Lobby() {
         background: '#fdfbf3'
       }}
     >
-      <h1>Harmonies online</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
+        <h1 style={{ margin: 0 }}>Harmonies online</h1>
+        <button onClick={onSignOut} style={{ fontSize: '0.8rem' }}>
+          Esci ({profile.nickname})
+        </button>
+      </div>
 
-      <label>
-        Nickname
-        <input value={nickname} onChange={(e) => setNickname(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '1rem' }} />
-      </label>
+      {myGames === null && <p style={{ color: '#666' }}>Carico le tue partite...</p>}
+
+      {myGames !== null && myGames.length > 0 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <p style={{ fontWeight: 'bold', margin: '0 0 6px' }}>Le tue partite:</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {myGames.map((g) => (
+              <div
+                key={g.id}
+                onClick={() => navigate(`/game/${g.id}`)}
+                style={{
+                  border: '1px solid #ccc',
+                  borderRadius: 6,
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: '#fff'
+                }}
+              >
+                <span>
+                  <strong>{g.room_code}</strong> · {g.board_mode === 'isole' ? 'Isole' : 'Standard'}
+                  {g.nature_spirit_extension ? ' · 🌿' : ''}
+                </span>
+                <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {g.status === 'waiting' ? '⏳ in attesa' : `▶️ turno ${g.turn_count}`}
+                </span>
+              </div>
+            ))}
+          </div>
+          <hr style={{ margin: '1rem 0' }} />
+        </div>
+      )}
 
       <p style={{ marginBottom: 4 }}>Modalità plancia (solo per chi crea la stanza):</p>
       <label style={{ display: 'block', marginBottom: 4 }}>

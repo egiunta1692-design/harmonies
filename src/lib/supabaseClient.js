@@ -11,13 +11,63 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Login anonimo: crea (o riusa) un utente senza email/password.
-// Basta per un MVP tra amici: l'unica cosa che serve è un nickname.
-export async function ensureAnonymousSession() {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session) return session
+// ============================================================
+// Autenticazione via email — sostituisce il precedente login anonimo.
+// Ogni persona si registra una volta con email+password; auth.uid()
+// resta stabile per sempre su quell'account, qualunque dispositivo o
+// browser usi per rientrare (basta rifare login).
+// ============================================================
 
-  const { data, error } = await supabase.auth.signInAnonymously()
+export async function signUpWithEmail(email, password) {
+  const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) throw error
-  return data.session
+  return data
+}
+
+export async function signInWithEmail(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  return data
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+// Reinvia l'email di conferma, per chi non l'ha ricevuta o l'ha persa.
+export async function resendConfirmationEmail(email) {
+  const { error } = await supabase.auth.resend({ type: 'signup', email })
+  if (error) throw error
+}
+
+// Il profilo (nickname) è separato dall'account email+password: subito
+// dopo la registrazione l'utente è autenticato ma non ha ancora un
+// profilo, finché non sceglie il nickname (vedi Auth.jsx).
+export async function getMyProfile() {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase.from('profiles').select().eq('id', user.id).maybeSingle()
+  return data
+}
+
+export async function createMyProfile(nickname) {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Non sei autenticato')
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert({ id: user.id, nickname: nickname.trim() })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') throw new Error('Questo nickname è già in uso da un altro account. Scegline un altro.')
+    throw error
+  }
+  return data
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { joinGame } from '../lib/joinGame'
 import HexBoard from '../components/HexBoard'
 import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
@@ -126,7 +127,7 @@ function playTurnChime() {
   }
 }
 
-export default function Game() {
+export default function Game({ profile }) {
   const { gameId } = useParams()
   const [game, setGame] = useState(null)
   const [players, setPlayers] = useState([])
@@ -152,6 +153,9 @@ export default function Game() {
   const [showAllCards, setShowAllCards] = useState(false) // debug: verifica visiva di tutte le carte
   const [showAllNatureSpirit, setShowAllNatureSpirit] = useState(false)
   const [confirmingTurn, setConfirmingTurn] = useState(false)
+  const [playersLoaded, setPlayersLoaded] = useState(false)
+  const [joining, setJoining] = useState(false)
+  const [joinError, setJoinError] = useState(null)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
   // Si ferma da solo a partita finita, così il tempo resta congelato
@@ -175,7 +179,10 @@ export default function Game() {
       if (!cancelled) setGame(gameData)
 
       const { data: playersData } = await supabase.from('players').select().eq('game_id', gameId)
-      if (!cancelled) setPlayers(playersData ?? [])
+      if (!cancelled) {
+        setPlayers(playersData ?? [])
+        setPlayersLoaded(true)
+      }
     }
     loadInitial()
 
@@ -354,6 +361,37 @@ export default function Game() {
   }, [myPlayer, isMyTurn, animalCardTurn])
 
   if (!game || !myUserId) return <p>Caricamento partita...</p>
+
+  if (playersLoaded && !myPlayer) {
+    return (
+      <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
+        <h1>Stanza {game.room_code}</h1>
+        <p style={{ color: '#666' }}>
+          Non risulti ancora tra i giocatori di questa stanza. Unisciti come <strong>{profile.nickname}</strong>{' '}
+          (il tuo account) per entrare — se ci hai già giocato prima, la tua plancia e le tue carte sono al
+          sicuro sul server e ti ritroverai esattamente dove avevi lasciato.
+        </p>
+        {joinError && <p style={{ color: 'red' }}>{joinError}</p>}
+        <button
+          disabled={joining}
+          onClick={async () => {
+            setJoining(true)
+            setJoinError(null)
+            try {
+              await joinGame({ gameId: game.id, boardMode: game.board_mode, profile })
+              // Il realtime aggiorna "players" da solo appena la riga esiste.
+            } catch (err) {
+              setJoinError(err.message)
+            } finally {
+              setJoining(false)
+            }
+          }}
+        >
+          {joining ? 'Entro...' : '🚪 Entra in questa stanza'}
+        </button>
+      </div>
+    )
+  }
 
   // "committedHand" = quello che è davvero salvato su Supabase in questo
   // momento (si aggiorna da solo se prendi una carta, via realtime).
