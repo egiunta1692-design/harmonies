@@ -923,7 +923,7 @@ export default function Game({ profile }) {
     padding: 6,
     minWidth: 92,
     flexShrink: 0,
-    background: isNatureSpirit ? '#f3e8ff' : '#fff',
+    background: isNatureSpirit ? '#ddffbd' : '#fff',
     position: 'relative'
   })
 
@@ -1287,9 +1287,6 @@ export default function Game({ profile }) {
                     </div>
                   )
                 })}
-                {currentHand.length === 0 && (
-                  <span style={{ color: '#888', fontSize: '0.85rem', gridColumn: '1 / -1' }}>nessuna carta presa</span>
-                )}
               </div>
 
               {/* Plancia, a destra della griglia carte */}
@@ -1381,9 +1378,6 @@ export default function Game({ profile }) {
                           </div>
                           )
                         })}
-                        {(p.animal_cards ?? []).length === 0 && (
-                          <span style={{ color: '#888', fontSize: 11 }}>nessuna carta presa</span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1535,7 +1529,7 @@ export default function Game({ profile }) {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {NATURE_SPIRIT_CARDS.map((card) => (
-                <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#f3e8ff' }}>
+                <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#ddffbd' }}>
                   <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
                   {Array.isArray(card.description) ? (
                     <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
@@ -1639,7 +1633,7 @@ export default function Game({ profile }) {
                       padding: 14,
                       width: 150,
                       cursor: 'pointer',
-                      background: '#f3e8ff',
+                      background: '#ddffbd',
                       position: 'relative'
                     }}
                   >
