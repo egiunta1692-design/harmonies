@@ -21,6 +21,7 @@ export default function Lobby({ profile, onSignOut }) {
   const [loading, setLoading] = useState(false)
   const [myGames, setMyGames] = useState(null) // null = ancora in caricamento
   const [showFinished, setShowFinished] = useState(false)
+  const [showActive, setShowActive] = useState(true)
   const navigate = useNavigate()
 
   // Le mie partite: si può giocare a più partite contemporaneamente,
@@ -143,7 +144,7 @@ export default function Lobby({ profile, onSignOut }) {
 
   return (
     <div style={page}>
-      <div style={{ ...cardWide, width: 680 }}>
+      <div style={{ ...cardWide, width: '92vw', maxWidth: 1400 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h1 style={{ ...title, margin: 0, textAlign: 'left' }}>Harmonies online</h1>
           <button onClick={onSignOut} style={linkText}>
@@ -196,8 +197,10 @@ export default function Lobby({ profile, onSignOut }) {
 
             {activeGames.length > 0 && (
               <div style={{ marginBottom: '1.25rem' }}>
-                <p style={sectionLabel}>Le tue partite</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>
+                <p onClick={() => setShowActive(!showActive)} style={{ ...sectionLabel, cursor: 'pointer' }}>
+                  {showActive ? '▾' : '▸'} Le tue partite ({activeGames.length})
+                </p>
+                {showActive && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>}
               </div>
             )}
 
