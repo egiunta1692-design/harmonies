@@ -18,7 +18,21 @@ export async function joinGame({ gameId, boardMode, profile }) {
     .eq('user_id', user.id)
     .maybeSingle()
 
+  // Chi era già seduto a questa partita può sempre rientrare, qualunque
+  // sia lo stato attuale (in attesa, in corso, conclusa) — è un rientro,
+  // non un nuovo ingresso.
   if (existing) return existing
+
+  // Un NUOVO giocatore, invece, può entrare solo mentre la partita è
+  // ancora in attesa: altrimenti resterebbe un "fantasma" con plancia
+  // vuota, senza turno_order (fissato all'avvio) e quindi senza mai un
+  // turno — e se la partita fosse già conclusa, sporcherebbe anche la
+  // classifica finale.
+  const { data: game, error: gameError } = await supabase.from('games').select('status').eq('id', gameId).single()
+  if (gameError) throw gameError
+  if (game.status !== 'waiting') {
+    throw new Error('Questa partita è già iniziata: non puoi più entrare come nuovo giocatore.')
+  }
 
   const { data: inserted, error } = await supabase
     .from('players')
