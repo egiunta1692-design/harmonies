@@ -31,6 +31,11 @@ import {
 // (Animale o Spirito della Natura) — il motore di piazzamento cubi
 // non distingue le due, quindi l'interfaccia non deve farlo a mano
 // in ogni punto in cui serve leggere nome/punti/habitat di una carta.
+// Sblocco (a livello admin/deploy) dell'interruttore anteprima live —
+// vedi .env.example. Se assente/false, l'interruttore non compare mai
+// e l'anteprima resta sempre disattivata per tutti.
+const LIVE_PREVIEW_UNLOCKABLE = import.meta.env.VITE_ENABLE_LIVE_PREVIEW === 'true'
+
 function getCardDef(cardId) {
   return getAnimalCard(cardId) ?? getNatureSpiritCard(cardId)
 }
@@ -160,6 +165,13 @@ export default function Game({ profile }) {
   const [confirmingTurn, setConfirmingTurn] = useState(false)
   const [playersLoaded, setPlayersLoaded] = useState(false)
   const [joining, setJoining] = useState(false)
+  // Preferenza puramente locale (mai sul database): ogni giocatore
+  // sceglie per sé se vedere le proprie mosse trasmesse live agli
+  // avversari. Spenta di default anche quando la variabile d'ambiente
+  // la sblocca — va accesa esplicitamente.
+  const [livePreviewOn, setLivePreviewOn] = useState(
+    () => LIVE_PREVIEW_UNLOCKABLE && localStorage.getItem('harmonies_live_preview') === 'true'
+  )
   const [joinError, setJoinError] = useState(null)
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
@@ -446,6 +458,7 @@ export default function Game({ profile }) {
   // che si aggiorna in modo asincrono ed è disponibile solo al
   // prossimo render).
   async function syncLivePreview(actions) {
+    if (!livePreviewOn) return
     if (!myPlayer?.board_state) return
     const preview =
       actions.length === 0
@@ -1240,7 +1253,39 @@ export default function Game({ profile }) {
             >
               <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
                 <span style={turnBadgeStyle(isMyTurn)}>{myPlayer?.nickname}</span>{' '}
-                <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
+                <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>{' '}
+                {LIVE_PREVIEW_UNLOCKABLE &&
+                  (() => {
+                    const turnInProgress = turnDiscsTaken.length > 0 || turnActions.length > 0 || !!animalCardTurn
+                    return (
+                      <label
+                        title={
+                          turnInProgress
+                            ? 'Puoi cambiarlo solo tra un turno e l\'altro, non a turno in corso'
+                            : 'Mostra agli avversari le tue mosse mentre le fai, non solo a fine turno'
+                        }
+                        style={{
+                          fontSize: '0.65em',
+                          fontWeight: 'normal',
+                          color: turnInProgress ? '#bbb' : '#666',
+                          cursor: turnInProgress ? 'not-allowed' : 'pointer',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={livePreviewOn}
+                          disabled={turnInProgress}
+                          onChange={(e) => {
+                            setLivePreviewOn(e.target.checked)
+                            localStorage.setItem('harmonies_live_preview', e.target.checked ? 'true' : 'false')
+                          }}
+                          style={{ verticalAlign: 'middle', marginRight: 3 }}
+                        />
+                        anteprima live
+                      </label>
+                    )
+                  })()}
               </h2>
               <div
                 style={{
