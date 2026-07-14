@@ -1222,24 +1222,30 @@ export default function Game({ profile }) {
               flex: otherPlayers.length > 0 ? 3 : 1,
               minWidth: 0,
               display: 'flex',
-              flexDirection: 'column',
               minHeight: 0,
+              gap: 12,
               background: game.board_mode === 'isole' ? '#cfe8f5' : panelStyle.background
             }}
           >
-            <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
-              <span style={turnBadgeStyle(isMyTurn)}>{myPlayer?.nickname}</span>{' '}
-              <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
-            </h2>
-
-            <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 12 }}>
-              {/* Griglia carte, a sinistra: scorre in verticale se non entrano */}
+            {/* Colonna sinistra: nome+contatore in alto, sotto le carte prese */}
+            <div
+              style={{
+                width: '30%',
+                minWidth: 140,
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}
+            >
+              <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
+                <span style={turnBadgeStyle(isMyTurn)}>{myPlayer?.nickname}</span>{' '}
+                <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>
+              </h2>
               <div
                 style={{
-                  width: '30%',
-                  minWidth: 140,
-                  flexShrink: 0,
-                  height: '100%',
+                  flex: 1,
+                  minHeight: 0,
                   overflowY: 'auto',
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
@@ -1288,17 +1294,17 @@ export default function Game({ profile }) {
                   )
                 })}
               </div>
+            </div>
 
-              {/* Plancia, a destra della griglia carte */}
-              <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', alignItems: 'flex-start' }}>
-                <HexBoard
-                  boardState={currentBoard}
-                  onCellClick={isMyTurn ? handleCellClick : undefined}
-                  highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
-                  highlightCells={cubeTargetCells}
-                  maxHeightVh={62}
-                />
-              </div>
+            {/* Colonna destra: la plancia, parte dall'alto del contenitore */}
+            <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', alignItems: 'flex-start' }}>
+              <HexBoard
+                boardState={currentBoard}
+                onCellClick={isMyTurn ? handleCellClick : undefined}
+                highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
+                highlightCells={cubeTargetCells}
+                maxHeightVh={62}
+              />
             </div>
           </div>
 
