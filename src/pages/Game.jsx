@@ -8,6 +8,7 @@ import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
 import CentralDiscPile from '../components/CentralDiscPile'
 import Loader from '../components/Loader'
+import { pillButton } from '../styles/theme'
 import { SingleDiscIcon } from '../components/DiscVisual'
 import {
   createEmptyPlayerBoard,
@@ -373,8 +374,7 @@ export default function Game({ profile }) {
           sicuro sul server e ti ritroverai esattamente dove avevi lasciato.
         </p>
         {joinError && <p style={{ color: 'red' }}>{joinError}</p>}
-        <button
-          disabled={joining}
+        <button disabled={joining} style={pillButton}
           onClick={async () => {
             setJoining(true)
             setJoinError(null)
@@ -948,11 +948,11 @@ export default function Game({ profile }) {
   })
 
   const panelStyle = {
-    border: '1px solid #4a3f2f',
-    borderRadius: 8,
+    borderRadius: 24,
     padding: '10px 14px',
     boxSizing: 'border-box',
-    background: '#fdfbf3'
+    background: '#fdfbf3',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
   }
 
   return (
@@ -1030,9 +1030,9 @@ export default function Game({ profile }) {
           )}
 
           {game.status === 'waiting' && (
-            <div>
-              <p style={{ margin: '0 0 6px', fontWeight: 'bold' }}>Giocatori in stanza:</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>Giocatori in stanza:</p>
                 {players.map((p) => (
                   <span
                     key={p.id}
@@ -1048,7 +1048,7 @@ export default function Game({ profile }) {
                   </span>
                 ))}
               </div>
-              <button onClick={handleStartGame}>▶️ Avvia partita ({players.length} giocatori)</button>
+              <button onClick={handleStartGame} style={pillButton}>▶️ Avvia partita ({players.length} giocatori)</button>
             </div>
           )}
 
@@ -1131,13 +1131,13 @@ export default function Game({ profile }) {
 
                   {turnActions.length > 0 && (
                     <>
-                      <button onClick={handleUndoLastAction}>↩️ Annulla ultima azione</button>
-                      <button onClick={handleUndoAllActions}>⏮️ Annulla tutto il turno</button>
+                      <button onClick={handleUndoLastAction} style={pillButton}>↩️ Annulla ultima azione</button>
+                      <button onClick={handleUndoAllActions} style={pillButton}>⏮️ Annulla tutto il turno</button>
                     </>
                   )}
 
                   {animalCardTurn && (
-                    <button onClick={handleUndoAnimalCard}>
+                    <button onClick={handleUndoAnimalCard} style={pillButton}>
                       {turnActions.some((a) => a.type === 'cube' && a.cardId === animalCardTurn.cardId)
                         ? '🗑️ Annulla presa carta (+ cubi)'
                         : '🗑️ Annulla presa carta'}
@@ -1146,10 +1146,18 @@ export default function Game({ profile }) {
 
                   {turnDiscsTaken.length > 0 && (
                     <>
-                      <button onClick={handleCancelTake} disabled={hasPlacedDiscThisTurn}>
+                      <button
+                        onClick={handleCancelTake}
+                        disabled={hasPlacedDiscThisTurn}
+                        style={{ ...pillButton, opacity: hasPlacedDiscThisTurn ? 0.5 : 1 }}
+                      >
                         🙅 Rinuncia alla presa
                       </button>
-                      <button onClick={handleConfirmTurn} disabled={remainingDiscs.length > 0 || confirmingTurn}>
+                      <button
+                        onClick={handleConfirmTurn}
+                        disabled={remainingDiscs.length > 0 || confirmingTurn}
+                        style={{ ...pillButton, opacity: remainingDiscs.length > 0 || confirmingTurn ? 0.5 : 1 }}
+                      >
                         {confirmingTurn ? 'Confermo...' : '✅ Conferma turno'}
                       </button>
                     </>
@@ -1413,7 +1421,7 @@ export default function Game({ profile }) {
                 <HabitatIcon habitat={zoomedCard.card.habitat} cubeColor={zoomedCard.card.points ? undefined : '#fff'} />
               </div>
             </div>
-            <button onClick={() => setZoomedCard(null)} style={{ position: 'relative', zIndex: 1 }}>
+            <button onClick={() => setZoomedCard(null)} style={{ ...pillButton, position: 'relative', zIndex: 1 }}>
               Chiudi
             </button>
           </div>
@@ -1449,7 +1457,7 @@ export default function Game({ profile }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h2 style={{ margin: 0 }}>🐾 Tutte le carte Animale ({ANIMAL_CARDS.length})</h2>
-              <button onClick={() => setShowAllCards(false)}>Chiudi</button>
+              <button onClick={() => setShowAllCards(false)} style={pillButton}>Chiudi</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {ANIMAL_CARDS.map((card) => (
@@ -1494,7 +1502,7 @@ export default function Game({ profile }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h2 style={{ margin: 0 }}>🌿 Tutte le carte Spirito della Natura ({NATURE_SPIRIT_CARDS.length})</h2>
-              <button onClick={() => setShowAllNatureSpirit(false)}>Chiudi</button>
+              <button onClick={() => setShowAllNatureSpirit(false)} style={pillButton}>Chiudi</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {NATURE_SPIRIT_CARDS.map((card) => (

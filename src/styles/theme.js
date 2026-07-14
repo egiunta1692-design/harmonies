@@ -94,6 +94,23 @@ export const secondaryButton = {
   marginTop: '0.5rem'
 }
 
+// Stesso stile a pillola di secondaryButton, ma inline e compatto — per
+// i pulsanti dentro la partita (Avvia, Conferma turno, Annulla, ecc.),
+// dove serve restare stretti sul contenuto e non spostare il resto
+// dell'interfaccia. Larghezza NON forzata: si adatta al testo, come i
+// bottoni nativi che sostituisce.
+export const pillButton = {
+  display: 'inline-block',
+  border: '1px solid #e4ddcc',
+  borderRadius: 999,
+  padding: '0.4rem 0.9rem',
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  color: '#2c2417',
+  background: '#fff',
+  cursor: 'pointer'
+}
+
 export const linkText = {
   background: 'none',
   border: 'none',
