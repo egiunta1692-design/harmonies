@@ -12,6 +12,94 @@ import {
 } from '../lib/supabaseClient'
 import Loader from '../components/Loader'
 
+// ---- Stile condiviso delle schermate di accesso -----------------------
+const ACCENT = 'linear-gradient(135deg, #6b5842 0%, #362c1e 100%)'
+const page = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: '#3d3222',
+  fontFamily: 'sans-serif',
+  padding: 20
+}
+const card = {
+  width: 360,
+  maxWidth: '100%',
+  background: '#fdfbf3',
+  borderRadius: 24,
+  padding: '2rem 1.75rem',
+  boxShadow: '0 20px 50px rgba(0,0,0,0.35)'
+}
+const title = { textAlign: 'center', fontSize: '1.7rem', fontWeight: 800, color: '#2c2417', margin: '0 0 1.5rem' }
+const toggleWrap = {
+  display: 'flex',
+  background: '#fff',
+  borderRadius: 999,
+  border: '1px solid #e4ddcc',
+  padding: 4,
+  marginBottom: '1.25rem'
+}
+function toggleBtn(active) {
+  return {
+    flex: 1,
+    border: 'none',
+    borderRadius: 999,
+    padding: '0.6rem 0',
+    fontWeight: 600,
+    fontSize: '0.95rem',
+    cursor: 'pointer',
+    background: active ? ACCENT : 'transparent',
+    color: active ? '#fff' : '#2c2417',
+    transition: 'background 0.15s'
+  }
+}
+const inputStyle = {
+  display: 'block',
+  width: '100%',
+  boxSizing: 'border-box',
+  background: '#fff',
+  border: '1px solid #e4ddcc',
+  borderRadius: 999,
+  padding: '0.8rem 1.1rem',
+  fontSize: '0.95rem',
+  color: '#2c2417',
+  marginBottom: '0.75rem',
+  outline: 'none'
+}
+const primaryButton = {
+  display: 'block',
+  width: '100%',
+  border: 'none',
+  borderRadius: 999,
+  padding: '0.85rem 0',
+  fontSize: '1rem',
+  fontWeight: 700,
+  color: '#fff',
+  background: ACCENT,
+  cursor: 'pointer',
+  marginTop: '0.25rem'
+}
+const secondaryButton = {
+  display: 'block',
+  width: '100%',
+  border: '1px solid #e4ddcc',
+  borderRadius: 999,
+  padding: '0.8rem 0',
+  fontSize: '0.9rem',
+  fontWeight: 600,
+  color: '#2c2417',
+  background: '#fff',
+  cursor: 'pointer',
+  marginTop: '0.5rem'
+}
+const linkText = { background: 'none', border: 'none', color: '#6b5842', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }
+const checkboxLabel = { display: 'flex', alignItems: 'center', gap: 6, margin: '0.4rem 0 1rem', fontSize: '0.85rem', color: '#5a5142' }
+const errorText = { color: '#b3261e', fontSize: '0.85rem', margin: '0 0 0.75rem' }
+const infoText = { color: '#2e6b3e', fontSize: '0.85rem', margin: '0 0 0.75rem' }
+const footerText = { textAlign: 'center', fontSize: '0.85rem', color: '#5a5142', margin: '1rem 0 0' }
+// -------------------------------------------------------------------------
+
 // Avvolge tutta l'app: finché non c'è una sessione autenticata E un
 // profilo (nickname) associato, mostra il modulo di accesso invece dei
 // figli. Passa "profile" e "signOut" ai figli tramite render prop, così
@@ -168,35 +256,33 @@ export default function Auth({ children }) {
   // cliccato il link ricevuto via email).
   if (recoveryMode) {
     return (
-      <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-        <h1>Imposta una nuova password</h1>
-        <label>
-          Nuova password
+      <div style={page}>
+        <div style={card}>
+          <h1 style={title}>Nuova password</h1>
           <input
             type={showNewPassword ? 'text' : 'password'}
+            placeholder="Nuova password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+            style={inputStyle}
           />
-        </label>
-        <label>
-          Conferma nuova password
           <input
             type={showNewPassword ? 'text' : 'password'}
+            placeholder="Conferma nuova password"
             value={newPasswordConfirm}
             onChange={(e) => setNewPasswordConfirm(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+            style={inputStyle}
           />
-        </label>
-        <label style={{ display: 'block', marginBottom: '1rem', fontSize: '0.85rem' }}>
-          <input type="checkbox" checked={showNewPassword} onChange={(e) => setShowNewPassword(e.target.checked)} /> Mostra
-          password
-        </label>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {info && <p style={{ color: 'green' }}>{info}</p>}
-        <button onClick={handleSetNewPassword} disabled={submitting} style={{ width: '100%' }}>
-          {submitting ? '...' : 'Imposta nuova password'}
-        </button>
+          <label style={checkboxLabel}>
+            <input type="checkbox" checked={showNewPassword} onChange={(e) => setShowNewPassword(e.target.checked)} />
+            Mostra password
+          </label>
+          {error && <p style={errorText}>{error}</p>}
+          {info && <p style={infoText}>{info}</p>}
+          <button onClick={handleSetNewPassword} disabled={submitting} style={primaryButton}>
+            {submitting ? '...' : 'Imposta nuova password'}
+          </button>
+        </div>
       </div>
     )
   }
@@ -204,93 +290,110 @@ export default function Auth({ children }) {
   // Nessuna sessione — login, registrazione, o richiesta di recupero password.
   if (!session) {
     return (
-      <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-        <h1>Harmonies online</h1>
+      <div style={page}>
+        <div style={card}>
+          <h1 style={title}>{mode === 'register' ? 'Registrati' : mode === 'forgot' ? 'Recupera password' : 'Accedi'}</h1>
 
-        {mode !== 'forgot' && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
-            <button onClick={() => setMode('login')} disabled={mode === 'login'}>
-              Accedi
-            </button>
-            <button onClick={() => setMode('register')} disabled={mode === 'register'}>
-              Registrati
-            </button>
-          </div>
-        )}
+          {mode !== 'forgot' && (
+            <div style={toggleWrap}>
+              <button
+                style={toggleBtn(mode === 'login')}
+                onClick={() => { setMode('login'); setError(null); setInfo(null) }}
+              >
+                Accedi
+              </button>
+              <button
+                style={toggleBtn(mode === 'register')}
+                onClick={() => { setMode('register'); setError(null); setInfo(null) }}
+              >
+                Registrati
+              </button>
+            </div>
+          )}
 
-        <label>
-          Email
           <input
             type="email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '1rem' }}
+            style={inputStyle}
           />
-        </label>
 
-        {mode === 'forgot' ? (
-          <>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {info && <p style={{ color: 'green' }}>{info}</p>}
-            <button onClick={handleRequestPasswordReset} disabled={submitting} style={{ width: '100%', marginBottom: '0.5rem' }}>
-              {submitting ? '...' : 'Invia email di recupero'}
-            </button>
-            <button onClick={() => { setMode('login'); setError(null); setInfo(null) }} style={{ width: '100%' }}>
-              ← Torna al login
-            </button>
-          </>
-        ) : (
-          <>
-            <label>
-              Password
+          {mode === 'forgot' ? (
+            <>
+              {error && <p style={errorText}>{error}</p>}
+              {info && <p style={infoText}>{info}</p>}
+              <button onClick={handleRequestPasswordReset} disabled={submitting} style={primaryButton}>
+                {submitting ? '...' : 'Invia email di recupero'}
+              </button>
+              <button onClick={() => { setMode('login'); setError(null); setInfo(null) }} style={secondaryButton}>
+                ← Torna al login
+              </button>
+            </>
+          ) : (
+            <>
               <input
                 type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ display: 'block', width: '100%', marginBottom: mode === 'register' ? '0.5rem' : '0' }}
+                style={inputStyle}
               />
-            </label>
 
-            {mode === 'register' && (
-              <label>
-                Conferma password
+              {mode === 'register' && (
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  placeholder="Conferma password"
                   value={passwordConfirm}
                   onChange={(e) => setPasswordConfirm(e.target.value)}
-                  style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
+                  style={inputStyle}
                 />
+              )}
+
+              <label style={checkboxLabel}>
+                <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+                Mostra password
               </label>
-            )}
 
-            <label style={{ display: 'block', margin: '0.5rem 0 1rem', fontSize: '0.85rem' }}>
-              <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} /> Mostra
-              password
-            </label>
+              {mode === 'login' && (
+                <p style={{ margin: '0 0 0.75rem' }}>
+                  <button onClick={() => { setMode('forgot'); setError(null); setInfo(null) }} style={linkText}>
+                    Password dimenticata?
+                  </button>
+                </p>
+              )}
 
-            {mode === 'login' && (
-              <p style={{ margin: '0 0 1rem' }}>
-                <button
-                  onClick={() => { setMode('forgot'); setError(null); setInfo(null) }}
-                  style={{ background: 'none', border: 'none', color: '#4a3f2f', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }}
-                >
-                  Password dimenticata?
+              {error && <p style={errorText}>{error}</p>}
+              {info && <p style={infoText}>{info}</p>}
+              {needsConfirmation && (
+                <button onClick={handleResendConfirmation} disabled={submitting} style={secondaryButton}>
+                  Reinvia email di conferma
                 </button>
-              </p>
-            )}
-
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {info && <p style={{ color: 'green' }}>{info}</p>}
-            {needsConfirmation && (
-              <button onClick={handleResendConfirmation} disabled={submitting} style={{ width: '100%', marginBottom: '1rem' }}>
-                Reinvia email di conferma
+              )}
+              <button onClick={handleAuthSubmit} disabled={submitting} style={primaryButton}>
+                {submitting ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
               </button>
-            )}
-            <button onClick={handleAuthSubmit} disabled={submitting} style={{ width: '100%' }}>
-              {submitting ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
-            </button>
-          </>
-        )}
+
+              <p style={footerText}>
+                {mode === 'login' ? (
+                  <>
+                    Non hai un account?{' '}
+                    <button onClick={() => { setMode('register'); setError(null); setInfo(null) }} style={linkText}>
+                      Registrati ora
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Hai già un account?{' '}
+                    <button onClick={() => { setMode('login'); setError(null); setInfo(null) }} style={linkText}>
+                      Accedi
+                    </button>
+                  </>
+                )}
+              </p>
+            </>
+          )}
+        </div>
       </div>
     )
   }
@@ -303,24 +406,19 @@ export default function Auth({ children }) {
   // resta legato all'account per sempre).
   if (!profile) {
     return (
-      <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-        <h1>Scegli il tuo nickname</h1>
-        <p style={{ color: '#666' }}>
-          Sarà il tuo identificativo in tutte le partite — unico per tutta l'app, non potrai cambiarlo qui in
-          seguito.
-        </p>
-        <label>
-          Nickname
-          <input
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '1rem' }}
-          />
-        </label>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button onClick={handleCreateProfile} disabled={submitting} style={{ width: '100%' }}>
-          {submitting ? '...' : 'Conferma'}
-        </button>
+      <div style={page}>
+        <div style={card}>
+          <h1 style={title}>Scegli il tuo nickname</h1>
+          <p style={{ color: '#5a5142', fontSize: '0.9rem', margin: '0 0 1rem', textAlign: 'center' }}>
+            Sarà il tuo identificativo in tutte le partite — unico per tutta l'app, non potrai cambiarlo qui in
+            seguito.
+          </p>
+          <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Nickname" style={inputStyle} />
+          {error && <p style={errorText}>{error}</p>}
+          <button onClick={handleCreateProfile} disabled={submitting} style={primaryButton}>
+            {submitting ? '...' : 'Conferma'}
+          </button>
+        </div>
       </div>
     )
   }

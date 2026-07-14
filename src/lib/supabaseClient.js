@@ -62,9 +62,20 @@ export async function resendConfirmationEmail(email) {
 // profilo, finché non sceglie il nickname (vedi Auth.jsx).
 export async function getMyProfile() {
   const {
-    data: { user }
+    data: { user },
+    error
   } = await supabase.auth.getUser()
-  if (!user) return null
+
+  if (error || !user) {
+    // La sessione salvata nel browser non è più valida lato server (es.
+    // utente cancellato dopo un reset del database) — la ripuliamo
+    // esplicitamente, altrimenti l'app resterebbe convinta che "una
+    // sessione c'è" ma senza profilo, mostrando per errore la scelta
+    // del nickname invece di riportare al login.
+    await supabase.auth.signOut()
+    return null
+  }
+
   const { data } = await supabase.from('profiles').select().eq('id', user.id).maybeSingle()
   return data
 }
