@@ -154,6 +154,9 @@ export default function Game({ profile }) {
   const [zoomedCard, setZoomedCard] = useState(null) // { card, entry? } per il popup di ingrandimento
   const [showAllCards, setShowAllCards] = useState(false) // debug: verifica visiva di tutte le carte
   const [showAllNatureSpirit, setShowAllNatureSpirit] = useState(false)
+  const [discPopupOpen, setDiscPopupOpen] = useState(false)
+  const [discPopupPos, setDiscPopupPos] = useState({ x: 24, y: 90 })
+  const discDragRef = useRef(null)
   const [confirmingTurn, setConfirmingTurn] = useState(false)
   const [playersLoaded, setPlayersLoaded] = useState(false)
   const [joining, setJoining] = useState(false)
@@ -367,7 +370,7 @@ export default function Game({ profile }) {
   if (playersLoaded && !myPlayer) {
     return (
       <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-        <h1>Stanza {game.room_code}</h1>
+        <h1>Stanza: <strong>{game.room_code}</strong></h1>
         <p style={{ color: '#666' }}>
           Non risulti ancora tra i giocatori di questa stanza. Unisciti come <strong>{profile.nickname}</strong>{' '}
           (il tuo account) per entrare — se ci hai già giocato prima, la tua plancia e le tue carte sono al
@@ -466,6 +469,24 @@ export default function Game({ profile }) {
       return true
     }
     return false
+  }
+
+  // Trascinamento del piccolo popup con il dettaglio dischi per colore:
+  // niente librerie, solo mousedown/mousemove/mouseup sulla finestra.
+  function handleDiscPopupDragStart(e) {
+    discDragRef.current = { startX: e.clientX, startY: e.clientY, origX: discPopupPos.x, origY: discPopupPos.y }
+    window.addEventListener('mousemove', handleDiscPopupDragMove)
+    window.addEventListener('mouseup', handleDiscPopupDragEnd)
+  }
+  function handleDiscPopupDragMove(e) {
+    if (!discDragRef.current) return
+    const { startX, startY, origX, origY } = discDragRef.current
+    setDiscPopupPos({ x: origX + (e.clientX - startX), y: origY + (e.clientY - startY) })
+  }
+  function handleDiscPopupDragEnd() {
+    discDragRef.current = null
+    window.removeEventListener('mousemove', handleDiscPopupDragMove)
+    window.removeEventListener('mouseup', handleDiscPopupDragEnd)
   }
 
   function activeCardCount(p) {
@@ -973,21 +994,29 @@ export default function Game({ profile }) {
         {/* Colonna sinistra: header, giocatori, plancia centrale, carte disponibili */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza {game.room_code}</h1>
+            <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza: <strong>{game.room_code}</strong></h1>
             <span style={{ color: '#666', fontSize: '0.85rem' }}>
-              Modalità: {game.board_mode === 'isole' ? 'Isole' : 'Standard (Fiume)'}
+              Modalità: <strong>{game.board_mode === 'isole' ? '🏝️ Isole' : '💧 Standard'}</strong>
               {game.nature_spirit_extension ? ' · 🌿 (estensione)' : ''}
             </span>
             {(game.status === 'playing' || game.status === 'finished') && (
               <span style={{ color: '#666', fontSize: '0.85rem' }}>
-                {game.started_at ? `Tempo: ${formatDuration(now - new Date(game.started_at).getTime())} · ` : ''}
-                Turno: {game.turn_count || '—'}
+                {game.started_at ? (
+                  <>
+                    Tempo: <strong>{formatDuration(now - new Date(game.started_at).getTime())}</strong> ·{' '}
+                  </>
+                ) : (
+                  ''
+                )}
+                Turno: <strong>{game.turn_count || '—'}</strong>
               </span>
             )}
             {game.status === 'playing' && (
               <span style={{ color: '#666', fontSize: '0.8rem' }}>
-                👝{game.bag.length} (🔴{bagCounts.red || 0} · 🟡{bagCounts.yellow || 0} · 🟢{bagCounts.green || 0} · 🟤
-                {bagCounts.brown || 0} · 🔘{bagCounts.grey || 0} · 🔵{bagCounts.blue || 0}) ·{' '}
+                <span onClick={() => setDiscPopupOpen(true)} style={{ cursor: 'pointer', textDecoration: 'underline dotted' }} title="Vedi il dettaglio per colore">
+                  👝{game.bag.length}
+                </span>{' '}
+                ·{' '}
                 <span onClick={() => setShowAllCards(true)} style={{ cursor: 'pointer', textDecoration: 'underline dotted' }} title="Vedi tutte le carte Animale">
                   🐾{game.animal_deck.length}
                 </span>{' '}
@@ -1190,7 +1219,7 @@ export default function Game({ profile }) {
           <div
             style={{
               ...panelStyle,
-              flex: 1,
+              flex: otherPlayers.length > 0 ? 3 : 1,
               minWidth: 0,
               display: 'flex',
               flexDirection: 'column',
@@ -1281,7 +1310,7 @@ export default function Game({ profile }) {
             <div
               style={{
                 ...panelStyle,
-                flex: 1,
+                flex: 2,
                 minWidth: 0,
                 display: 'flex',
                 flexDirection: 'column',
@@ -1521,6 +1550,59 @@ export default function Game({ profile }) {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {discPopupOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: discPopupPos.x,
+            top: discPopupPos.y,
+            zIndex: 500,
+            background: '#fdfbf3',
+            border: '1px solid #e4ddcc',
+            borderRadius: 12,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            minWidth: 210,
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            onMouseDown={handleDiscPopupDragStart}
+            style={{
+              cursor: 'move',
+              padding: '6px 10px',
+              background: '#f1efe8',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '0.8rem',
+              fontWeight: 'bold',
+              userSelect: 'none'
+            }}
+          >
+            <span>👝 Dischi nel sacchetto</span>
+            <button
+              onClick={() => setDiscPopupOpen(false)}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', lineHeight: 1, padding: 2 }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ padding: '10px 12px', fontSize: '0.85rem', lineHeight: 1.7 }}>
+            🔴 Rosso: {bagCounts.red || 0}
+            <br />
+            🟡 Giallo: {bagCounts.yellow || 0}
+            <br />
+            🟢 Verde: {bagCounts.green || 0}
+            <br />
+            🟤 Marrone: {bagCounts.brown || 0}
+            <br />
+            🔘 Grigio: {bagCounts.grey || 0}
+            <br />
+            🔵 Azzurro: {bagCounts.blue || 0}
           </div>
         </div>
       )}

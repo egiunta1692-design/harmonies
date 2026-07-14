@@ -14,8 +14,8 @@ export const DISC_HEX = {
 
 // Contorno condiviso: usato per tutti i dischi E per il cubo Animale
 // sulla plancia, così restano visivamente coerenti.
-export const DISC_STROKE = 'rgba(0,0,0,0.55)'
-export const DISC_STROKE_WIDTH = 1.2
+export const DISC_STROKE = 'rgba(0,0,0,0.2)'
+export const DISC_STROKE_WIDTH = 0.6
 
 // Interpola un colore verso il bianco in proporzione (non in modo
 // additivo): così un colore già chiaro come il grigio non sfonda verso

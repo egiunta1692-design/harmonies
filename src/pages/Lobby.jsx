@@ -143,7 +143,7 @@ export default function Lobby({ profile, onSignOut }) {
 
   return (
     <div style={page}>
-      <div style={cardWide}>
+      <div style={{ ...cardWide, width: 680 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h1 style={{ ...title, margin: 0, textAlign: 'left' }}>Harmonies online</h1>
           <button onClick={onSignOut} style={linkText}>
@@ -151,56 +151,66 @@ export default function Lobby({ profile, onSignOut }) {
           </button>
         </div>
 
-        {activeGames.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <p style={sectionLabel}>Le tue partite</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          {/* Colonna sinistra: creazione ed ingresso in una stanza */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={sectionLabel}>Nuova stanza</p>
+            <label style={radioLabel}>
+              <input type="radio" name="boardMode" checked={boardMode === 'standard'} onChange={() => setBoardMode('standard')} />
+              Standard (lato A — punteggio Fiume)
+            </label>
+            <label style={radioLabel}>
+              <input type="radio" name="boardMode" checked={boardMode === 'isole'} onChange={() => setBoardMode('isole')} />
+              Isole (lato B — punteggio Isole)
+            </label>
+            <label style={{ ...radioLabel, marginBottom: '1rem' }}>
+              <input type="checkbox" checked={natureSpiritExtension} onChange={(e) => setNatureSpiritExtension(e.target.checked)} />
+              🌿 Carte Spirito della Natura (estensione)
+            </label>
+
+            <button onClick={handleCreate} disabled={loading} style={primaryButton}>
+              ➕ Crea una nuova stanza
+            </button>
+
+            <hr style={{ border: 'none', borderTop: '1px solid #e4ddcc', margin: '1.25rem 0' }} />
+
+            <p style={sectionLabel}>Entra in una stanza esistente</p>
+            <input
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              placeholder="Codice stanza"
+              style={inputStyle}
+            />
+            <button onClick={handleJoin} disabled={loading} style={secondaryButton}>
+              🚪 Entra in una stanza
+            </button>
+
+            {error && <p style={errorText}>{error}</p>}
           </div>
-        )}
 
-        {finishedGames.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <p onClick={() => setShowFinished(!showFinished)} style={{ ...sectionLabel, cursor: 'pointer', color: '#5a5142' }}>
-              {showFinished ? '▾' : '▸'} Partite concluse ({finishedGames.length})
-            </p>
-            {showFinished && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{finishedGames.map(gameRow)}</div>}
+          {/* Colonna destra: le partite a cui partecipi già */}
+          <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #e4ddcc', paddingLeft: 24 }}>
+            {activeGames.length === 0 && finishedGames.length === 0 && (
+              <p style={{ color: '#5a5142', fontSize: '0.85rem' }}>Non hai ancora nessuna partita — creane una o entra in una stanza.</p>
+            )}
+
+            {activeGames.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p style={sectionLabel}>Le tue partite</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>
+              </div>
+            )}
+
+            {finishedGames.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p onClick={() => setShowFinished(!showFinished)} style={{ ...sectionLabel, cursor: 'pointer', color: '#5a5142' }}>
+                  {showFinished ? '▾' : '▸'} Partite concluse ({finishedGames.length})
+                </p>
+                {showFinished && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{finishedGames.map(gameRow)}</div>}
+              </div>
+            )}
           </div>
-        )}
-
-        {(activeGames.length > 0 || finishedGames.length > 0) && <hr style={{ border: 'none', borderTop: '1px solid #e4ddcc', margin: '1.25rem 0' }} />}
-
-        <p style={sectionLabel}>Nuova stanza</p>
-        <label style={radioLabel}>
-          <input type="radio" name="boardMode" checked={boardMode === 'standard'} onChange={() => setBoardMode('standard')} />
-          Standard (lato A — punteggio Fiume)
-        </label>
-        <label style={radioLabel}>
-          <input type="radio" name="boardMode" checked={boardMode === 'isole'} onChange={() => setBoardMode('isole')} />
-          Isole (lato B — punteggio Isole)
-        </label>
-        <label style={{ ...radioLabel, marginBottom: '1rem' }}>
-          <input type="checkbox" checked={natureSpiritExtension} onChange={(e) => setNatureSpiritExtension(e.target.checked)} />
-          🌿 Carte Spirito della Natura (estensione)
-        </label>
-
-        <button onClick={handleCreate} disabled={loading} style={primaryButton}>
-          ➕ Crea una nuova stanza
-        </button>
-
-        <hr style={{ border: 'none', borderTop: '1px solid #e4ddcc', margin: '1.25rem 0' }} />
-
-        <p style={sectionLabel}>Entra in una stanza esistente</p>
-        <input
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value)}
-          placeholder="Codice stanza"
-          style={inputStyle}
-        />
-        <button onClick={handleJoin} disabled={loading} style={secondaryButton}>
-          🚪 Entra in una stanza
-        </button>
-
-        {error && <p style={errorText}>{error}</p>}
+        </div>
       </div>
     </div>
   )
