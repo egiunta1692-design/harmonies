@@ -1262,27 +1262,53 @@ export default function Game({ profile }) {
                         title={
                           turnInProgress
                             ? 'Puoi cambiarlo solo tra un turno e l\'altro, non a turno in corso'
-                            : 'Mostra agli avversari le tue mosse mentre le fai, non solo a fine turno'
+                            : 'Mostra posizionamento dei tuoi dischi live'
                         }
                         style={{
-                          fontSize: '0.65em',
-                          fontWeight: 'normal',
-                          color: turnInProgress ? '#bbb' : '#666',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
                           cursor: turnInProgress ? 'not-allowed' : 'pointer',
                           userSelect: 'none'
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={livePreviewOn}
-                          disabled={turnInProgress}
-                          onChange={(e) => {
-                            setLivePreviewOn(e.target.checked)
-                            localStorage.setItem('harmonies_live_preview', e.target.checked ? 'true' : 'false')
+                        <span style={{ fontSize: '0.85em', opacity: turnInProgress ? 0.4 : 1 }}>🧿</span>
+                        <span
+                          style={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            width: 26,
+                            height: 15,
+                            borderRadius: 999,
+                            background: livePreviewOn ? '#8a6a48' : '#ccc',
+                            opacity: turnInProgress ? 0.5 : 1,
+                            transition: 'background 0.15s'
                           }}
-                          style={{ verticalAlign: 'middle', marginRight: 3 }}
-                        />
-                        anteprima live
+                        >
+                          <input
+                            type="checkbox"
+                            checked={livePreviewOn}
+                            disabled={turnInProgress}
+                            onChange={(e) => {
+                              setLivePreviewOn(e.target.checked)
+                              localStorage.setItem('harmonies_live_preview', e.target.checked ? 'true' : 'false')
+                            }}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', margin: 0, opacity: 0, cursor: 'inherit' }}
+                          />
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 2,
+                              left: livePreviewOn ? 13 : 2,
+                              width: 11,
+                              height: 11,
+                              borderRadius: '50%',
+                              background: '#fff',
+                              transition: 'left 0.15s',
+                              pointerEvents: 'none'
+                            }}
+                          />
+                        </span>
                       </label>
                     )
                   })()}
