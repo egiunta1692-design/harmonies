@@ -11,94 +11,21 @@ import {
   updateMyPassword
 } from '../lib/supabaseClient'
 import Loader from '../components/Loader'
-
-// ---- Stile condiviso delle schermate di accesso -----------------------
-const ACCENT = 'linear-gradient(135deg, #6b5842 0%, #362c1e 100%)'
-const page = {
-  minHeight: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: '#3d3222',
-  fontFamily: 'sans-serif',
-  padding: 20
-}
-const card = {
-  width: 360,
-  maxWidth: '100%',
-  background: '#fdfbf3',
-  borderRadius: 24,
-  padding: '2rem 1.75rem',
-  boxShadow: '0 20px 50px rgba(0,0,0,0.35)'
-}
-const title = { textAlign: 'center', fontSize: '1.7rem', fontWeight: 800, color: '#2c2417', margin: '0 0 1.5rem' }
-const toggleWrap = {
-  display: 'flex',
-  background: '#fff',
-  borderRadius: 999,
-  border: '1px solid #e4ddcc',
-  padding: 4,
-  marginBottom: '1.25rem'
-}
-function toggleBtn(active) {
-  return {
-    flex: 1,
-    border: 'none',
-    borderRadius: 999,
-    padding: '0.6rem 0',
-    fontWeight: 600,
-    fontSize: '0.95rem',
-    cursor: 'pointer',
-    background: active ? ACCENT : 'transparent',
-    color: active ? '#fff' : '#2c2417',
-    transition: 'background 0.15s'
-  }
-}
-const inputStyle = {
-  display: 'block',
-  width: '100%',
-  boxSizing: 'border-box',
-  background: '#fff',
-  border: '1px solid #e4ddcc',
-  borderRadius: 999,
-  padding: '0.8rem 1.1rem',
-  fontSize: '0.95rem',
-  color: '#2c2417',
-  marginBottom: '0.75rem',
-  outline: 'none'
-}
-const primaryButton = {
-  display: 'block',
-  width: '100%',
-  border: 'none',
-  borderRadius: 999,
-  padding: '0.85rem 0',
-  fontSize: '1rem',
-  fontWeight: 700,
-  color: '#fff',
-  background: ACCENT,
-  cursor: 'pointer',
-  marginTop: '0.25rem'
-}
-const secondaryButton = {
-  display: 'block',
-  width: '100%',
-  border: '1px solid #e4ddcc',
-  borderRadius: 999,
-  padding: '0.8rem 0',
-  fontSize: '0.9rem',
-  fontWeight: 600,
-  color: '#2c2417',
-  background: '#fff',
-  cursor: 'pointer',
-  marginTop: '0.5rem'
-}
-const linkText = { background: 'none', border: 'none', color: '#6b5842', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }
-const checkboxLabel = { display: 'flex', alignItems: 'center', gap: 6, margin: '0.4rem 0 1rem', fontSize: '0.85rem', color: '#5a5142' }
-const errorText = { color: '#b3261e', fontSize: '0.85rem', margin: '0 0 0.75rem' }
-const infoText = { color: '#2e6b3e', fontSize: '0.85rem', margin: '0 0 0.75rem' }
-const footerText = { textAlign: 'center', fontSize: '0.85rem', color: '#5a5142', margin: '1rem 0 0' }
-// -------------------------------------------------------------------------
+import {
+  page,
+  card,
+  title,
+  toggleWrap,
+  toggleBtn,
+  inputStyle,
+  primaryButton,
+  secondaryButton,
+  linkText,
+  checkboxLabel,
+  errorText,
+  infoText,
+  footerText
+} from '../styles/theme'
 
 // Avvolge tutta l'app: finché non c'è una sessione autenticata E un
 // profilo (nickname) associato, mostra il modulo di accesso invece dei

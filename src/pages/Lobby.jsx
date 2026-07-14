@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { joinGame } from '../lib/joinGame'
 import { createInitialGameState } from '../game-engine'
 import Loader from '../components/Loader'
+import { page, cardWide, title, inputStyle, primaryButton, secondaryButton, errorText, linkText } from '../styles/theme'
 
 function randomRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // niente caratteri ambigui
@@ -109,126 +110,98 @@ export default function Lobby({ profile, onSignOut }) {
 
   if (myGames === null) return <Loader message="Carico le tue stanze..." />
 
-  return (
+  const radioLabel = { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: '0.9rem', color: '#2c2417' }
+  const sectionLabel = { fontWeight: 700, fontSize: '0.85rem', color: '#2c2417', margin: '0 0 8px' }
+
+  const activeGames = myGames.filter((g) => g.status !== 'finished')
+  const finishedGames = myGames.filter((g) => g.status === 'finished')
+
+  const gameRow = (g) => (
     <div
+      key={g.id}
+      onClick={() => navigate(`/game/${g.id}`)}
       style={{
-        maxWidth: 420,
-        margin: '4rem auto',
-        fontFamily: 'sans-serif',
-        border: '1px solid #4a3f2f',
-        borderRadius: 8,
-        padding: '1.5rem',
-        background: '#fdfbf3'
+        border: '1px solid #e4ddcc',
+        borderRadius: 14,
+        padding: '10px 14px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: '#fff'
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0 }}>Harmonies online</h1>
-        <button onClick={onSignOut} style={{ fontSize: '0.8rem' }}>
-          Esci ({profile.nickname})
-        </button>
-      </div>
+      <span>
+        <strong>{g.room_code}</strong> · {g.board_mode === 'isole' ? 'Isole' : 'Standard'}
+        {g.nature_spirit_extension ? ' · 🌿' : ''}
+      </span>
+      <span style={{ fontSize: '0.8rem', color: '#5a5142' }}>
+        {g.status === 'waiting' ? '⏳ in attesa' : g.status === 'finished' ? '🏆 conclusa' : `▶️ turno ${g.turn_count}`}
+      </span>
+    </div>
+  )
 
-      {(() => {
-        const activeGames = myGames.filter((g) => g.status !== 'finished')
-        const finishedGames = myGames.filter((g) => g.status === 'finished')
+  return (
+    <div style={page}>
+      <div style={cardWide}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
+          <h1 style={{ ...title, margin: 0, textAlign: 'left' }}>Harmonies online</h1>
+          <button onClick={onSignOut} style={linkText}>
+            Esci ({profile.nickname})
+          </button>
+        </div>
 
-        const gameRow = (g) => (
-          <div
-            key={g.id}
-            onClick={() => navigate(`/game/${g.id}`)}
-            style={{
-              border: '1px solid #ccc',
-              borderRadius: 6,
-              padding: '8px 12px',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: '#fff'
-            }}
-          >
-            <span>
-              <strong>{g.room_code}</strong> · {g.board_mode === 'isole' ? 'Isole' : 'Standard'}
-              {g.nature_spirit_extension ? ' · 🌿' : ''}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#666' }}>
-              {g.status === 'waiting' ? '⏳ in attesa' : g.status === 'finished' ? '🏆 conclusa' : `▶️ turno ${g.turn_count}`}
-            </span>
+        {activeGames.length > 0 && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <p style={sectionLabel}>Le tue partite</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>
           </div>
-        )
+        )}
 
-        return (
-          <>
-            {activeGames.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ fontWeight: 'bold', margin: '0 0 6px' }}>Le tue partite:</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{activeGames.map(gameRow)}</div>
-              </div>
-            )}
+        {finishedGames.length > 0 && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <p onClick={() => setShowFinished(!showFinished)} style={{ ...sectionLabel, cursor: 'pointer', color: '#5a5142' }}>
+              {showFinished ? '▾' : '▸'} Partite concluse ({finishedGames.length})
+            </p>
+            {showFinished && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{finishedGames.map(gameRow)}</div>}
+          </div>
+        )}
 
-            {finishedGames.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <p
-                  onClick={() => setShowFinished(!showFinished)}
-                  style={{ fontWeight: 'bold', margin: '0 0 6px', cursor: 'pointer', color: '#666' }}
-                >
-                  {showFinished ? '▾' : '▸'} Partite concluse ({finishedGames.length})
-                </p>
-                {showFinished && <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{finishedGames.map(gameRow)}</div>}
-              </div>
-            )}
+        {(activeGames.length > 0 || finishedGames.length > 0) && <hr style={{ border: 'none', borderTop: '1px solid #e4ddcc', margin: '1.25rem 0' }} />}
 
-            {(activeGames.length > 0 || finishedGames.length > 0) && <hr style={{ margin: '1rem 0' }} />}
-          </>
-        )
-      })()}
+        <p style={sectionLabel}>Nuova stanza</p>
+        <label style={radioLabel}>
+          <input type="radio" name="boardMode" checked={boardMode === 'standard'} onChange={() => setBoardMode('standard')} />
+          Standard (lato A — punteggio Fiume)
+        </label>
+        <label style={radioLabel}>
+          <input type="radio" name="boardMode" checked={boardMode === 'isole'} onChange={() => setBoardMode('isole')} />
+          Isole (lato B — punteggio Isole)
+        </label>
+        <label style={{ ...radioLabel, marginBottom: '1rem' }}>
+          <input type="checkbox" checked={natureSpiritExtension} onChange={(e) => setNatureSpiritExtension(e.target.checked)} />
+          🌿 Carte Spirito della Natura (estensione)
+        </label>
 
-      <p style={{ marginBottom: 4 }}>Modalità plancia (solo per chi crea la stanza):</p>
-      <label style={{ display: 'block', marginBottom: 4 }}>
+        <button onClick={handleCreate} disabled={loading} style={primaryButton}>
+          ➕ Crea una nuova stanza
+        </button>
+
+        <hr style={{ border: 'none', borderTop: '1px solid #e4ddcc', margin: '1.25rem 0' }} />
+
+        <p style={sectionLabel}>Entra in una stanza esistente</p>
         <input
-          type="radio"
-          name="boardMode"
-          value="standard"
-          checked={boardMode === 'standard'}
-          onChange={() => setBoardMode('standard')}
-        />{' '}
-        Standard (lato A — punteggio Fiume)
-      </label>
-      <label style={{ display: 'block', marginBottom: '1rem' }}>
-        <input
-          type="radio"
-          name="boardMode"
-          value="isole"
-          checked={boardMode === 'isole'}
-          onChange={() => setBoardMode('isole')}
-        />{' '}
-        Isole (lato B — punteggio Isole)
-      </label>
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value)}
+          placeholder="Codice stanza"
+          style={inputStyle}
+        />
+        <button onClick={handleJoin} disabled={loading} style={secondaryButton}>
+          🚪 Entra in una stanza
+        </button>
 
-      <label style={{ display: 'block', marginBottom: '1rem' }}>
-        <input
-          type="checkbox"
-          checked={natureSpiritExtension}
-          onChange={(e) => setNatureSpiritExtension(e.target.checked)}
-        />{' '}
-        🌿 Carte Spirito della Natura (estensione)
-      </label>
-
-      <button onClick={handleCreate} disabled={loading} style={{ width: '100%', marginBottom: '1rem' }}>
-        ➕ Crea una nuova stanza
-      </button>
-
-      <hr />
-
-      <label>
-        Codice stanza
-        <input value={joinCode} onChange={(e) => setJoinCode(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '1rem' }} />
-      </label>
-      <button onClick={handleJoin} disabled={loading} style={{ width: '100%' }}>
-        🚪 Entra in una stanza
-      </button>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p style={errorText}>{error}</p>}
+      </div>
     </div>
   )
 }
