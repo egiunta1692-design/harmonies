@@ -996,8 +996,8 @@ export default function Game({ profile }) {
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
             <h1 style={{ margin: 0, fontSize: '1.3rem' }}>Stanza: <strong>{game.room_code}</strong></h1>
             <span style={{ color: '#666', fontSize: '0.85rem' }}>
-              Modalità: <strong>{game.board_mode === 'isole' ? '🏝️ Isole' : '💧 Standard'}</strong>
-              {game.nature_spirit_extension ? ' · 🌿 (estensione)' : ''}
+              Modalità: <strong>{game.board_mode === 'isole' ? '🏝️ Isole' : '💧 Fiume'}</strong>
+              {game.nature_spirit_extension ? ' · 🌿 Spirito della Natura' : ''}
             </span>
             {(game.status === 'playing' || game.status === 'finished') && (
               <span style={{ color: '#666', fontSize: '0.85rem' }}>

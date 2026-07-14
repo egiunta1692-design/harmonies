@@ -113,6 +113,7 @@ export default function Lobby({ profile, onSignOut }) {
 
   const radioLabel = { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: '0.9rem', color: '#2c2417' }
   const sectionLabel = { fontWeight: 700, fontSize: '0.85rem', color: '#2c2417', margin: '0 0 8px' }
+  const subLabel = { fontWeight: 600, fontSize: '0.8rem', color: '#5a5142', margin: '10px 0 6px' }
 
   const activeGames = myGames.filter((g) => g.status !== 'finished')
   const finishedGames = myGames.filter((g) => g.status === 'finished')
@@ -133,7 +134,7 @@ export default function Lobby({ profile, onSignOut }) {
       }}
     >
       <span>
-        <strong>{g.room_code}</strong> · {g.board_mode === 'isole' ? 'Isole' : 'Standard'}
+        <strong>{g.room_code}</strong> · {g.board_mode === 'isole' ? '🏝️ Isole' : '💧 Fiume'}
         {g.nature_spirit_extension ? ' · 🌿' : ''}
       </span>
       <span style={{ fontSize: '0.8rem', color: '#5a5142' }}>
@@ -156,17 +157,21 @@ export default function Lobby({ profile, onSignOut }) {
           {/* Colonna sinistra: creazione ed ingresso in una stanza */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={sectionLabel}>Nuova stanza</p>
+
+            <p style={subLabel}>Plancia:</p>
             <label style={radioLabel}>
               <input type="radio" name="boardMode" checked={boardMode === 'standard'} onChange={() => setBoardMode('standard')} />
-              Standard (lato A — punteggio Fiume)
+              💧 Fiume
             </label>
             <label style={radioLabel}>
               <input type="radio" name="boardMode" checked={boardMode === 'isole'} onChange={() => setBoardMode('isole')} />
-              Isole (lato B — punteggio Isole)
+              🏝️ Isole
             </label>
+
+            <p style={subLabel}>Estensioni:</p>
             <label style={{ ...radioLabel, marginBottom: '1rem' }}>
               <input type="checkbox" checked={natureSpiritExtension} onChange={(e) => setNatureSpiritExtension(e.target.checked)} />
-              🌿 Carte Spirito della Natura (estensione)
+              🌿 Spirito della Natura
             </label>
 
             <button onClick={handleCreate} disabled={loading} style={primaryButton}>
