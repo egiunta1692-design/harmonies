@@ -133,7 +133,7 @@ function scoreBuildings(board) {
   let total = 0
   for (const { q, r } of boardCells(board)) {
     const cell = getCell(board, q, r)
-    if (topColor(cell) !== 'red' || cell.discs.length < 2) continue
+    if (topColor(cell) !== 'red') continue
 
     const neighborColors = new Set(
       boardNeighbors(board, q, r)

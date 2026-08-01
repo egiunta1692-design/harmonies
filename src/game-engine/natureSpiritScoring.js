@@ -82,10 +82,8 @@ function computeBonus(board, rule, cardId) {
       let count = 0
       for (const { q, r } of boardCells(board)) {
         const cell = getCell(board, q, r)
-        if (topColor(cell) !== 'red' || cell.discs.length < 2) continue
-        const hasBuildingNeighbor = boardNeighbors(board, q, r).some(
-          (n) => topColor(n.cell) === 'red' && n.cell.discs.length >= 2
-        )
+        if (topColor(cell) !== 'red') continue
+        const hasBuildingNeighbor = boardNeighbors(board, q, r).some((n) => topColor(n.cell) === 'red')
         if (!hasBuildingNeighbor) count++
       }
       return count * rule.points
@@ -94,7 +92,7 @@ function computeBonus(board, rule, cardId) {
     // Gru: punti per ogni GRUPPO di 2+ Edifici collegati tra loro (un
     // gruppo di 3+ vale comunque una volta sola, come da regolamento).
     case 'building_group_isolated': {
-      const groups = findConnectedGroups(board, (cell) => topColor(cell) === 'red' && cell.discs.length >= 2)
+      const groups = findConnectedGroups(board, (cell) => topColor(cell) === 'red')
       return groups.filter((g) => g.length >= rule.minSize).length * rule.points
     }
 
