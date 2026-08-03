@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { joinGame } from '../lib/joinGame'
 import HexBoard from '../components/HexBoard'
+import HexBoard3D from '../components/HexBoard3D'
 import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
@@ -173,6 +174,10 @@ export default function Game({ profile }) {
     () => LIVE_PREVIEW_UNLOCKABLE && localStorage.getItem('harmonies_live_preview') === 'true'
   )
   const [joinError, setJoinError] = useState(null)
+  // Vista 3D solo della PROPRIA plancia (per ora — vedi nota più sotto
+  // sul perché non è offerta anche per gli avversari). Preferenza
+  // puramente locale, non sul database.
+  const [board3D, setBoard3D] = useState(() => localStorage.getItem('harmonies_board_3d') === 'true')
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
   // Si ferma da solo a partita finita, così il tempo resta congelato
@@ -1370,14 +1375,37 @@ export default function Game({ profile }) {
             </div>
 
             {/* Colonna destra: la plancia, parte dall'alto del contenitore */}
-            <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', alignItems: 'flex-start' }}>
-              <HexBoard
-                boardState={currentBoard}
-                onCellClick={isMyTurn ? handleCellClick : undefined}
-                highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
-                highlightCells={cubeTargetCells}
-                maxHeightVh={62}
-              />
+            <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#666', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={board3D}
+                    onChange={(e) => {
+                      setBoard3D(e.target.checked)
+                      localStorage.setItem('harmonies_board_3d', e.target.checked ? 'true' : 'false')
+                    }}
+                  />
+                  🧊 Vista 3D
+                </label>
+              </div>
+              {board3D ? (
+                <HexBoard3D
+                  boardState={currentBoard}
+                  onCellClick={isMyTurn ? handleCellClick : undefined}
+                  highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
+                  highlightCells={cubeTargetCells}
+                  maxHeightVh={58}
+                />
+              ) : (
+                <HexBoard
+                  boardState={currentBoard}
+                  onCellClick={isMyTurn ? handleCellClick : undefined}
+                  highlightable={isMyTurn && (remainingDiscs.length > 0 || !!selectedCardForCube)}
+                  highlightCells={cubeTargetCells}
+                  maxHeightVh={58}
+                />
+              )}
             </div>
           </div>
 
