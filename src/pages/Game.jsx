@@ -1260,64 +1260,6 @@ export default function Game({ profile }) {
               <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>
                 <span style={turnBadgeStyle(isMyTurn)}>{myPlayer?.nickname}</span>{' '}
                 <span style={{ fontSize: '0.7em', fontWeight: 'normal', color: '#666' }}>🎴{myActiveCards.length}/4</span>{' '}
-                {LIVE_PREVIEW_UNLOCKABLE &&
-                  (() => {
-                    const turnInProgress = turnDiscsTaken.length > 0 || turnActions.length > 0 || !!animalCardTurn
-                    return (
-                      <label
-                        title={
-                          turnInProgress
-                            ? 'Puoi cambiarlo solo tra un turno e l\'altro, non a turno in corso'
-                            : 'Mostra posizionamento dei tuoi dischi live'
-                        }
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          cursor: turnInProgress ? 'not-allowed' : 'pointer',
-                          userSelect: 'none'
-                        }}
-                      >
-                        <span style={{ fontSize: '0.85em', opacity: turnInProgress ? 0.4 : 1 }}>🧿</span>
-                        <span
-                          style={{
-                            position: 'relative',
-                            display: 'inline-block',
-                            width: 26,
-                            height: 15,
-                            borderRadius: 999,
-                            background: livePreviewOn ? '#8a6a48' : '#ccc',
-                            opacity: turnInProgress ? 0.5 : 1,
-                            transition: 'background 0.15s'
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={livePreviewOn}
-                            disabled={turnInProgress}
-                            onChange={(e) => {
-                              setLivePreviewOn(e.target.checked)
-                              localStorage.setItem('harmonies_live_preview', e.target.checked ? 'true' : 'false')
-                            }}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', margin: 0, opacity: 0, cursor: 'inherit' }}
-                          />
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: 2,
-                              left: livePreviewOn ? 13 : 2,
-                              width: 11,
-                              height: 11,
-                              borderRadius: '50%',
-                              background: '#fff',
-                              transition: 'left 0.15s',
-                              pointerEvents: 'none'
-                            }}
-                          />
-                        </span>
-                      </label>
-                    )
-                  })()}
               </h2>
               <div
                 style={{
@@ -1375,7 +1317,39 @@ export default function Game({ profile }) {
 
             {/* Colonna destra: la plancia, parte dall'alto del contenitore */}
             <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                {LIVE_PREVIEW_UNLOCKABLE &&
+                  (() => {
+                    const turnInProgress = turnDiscsTaken.length > 0 || turnActions.length > 0 || !!animalCardTurn
+                    return (
+                      <label
+                        title={
+                          turnInProgress
+                            ? 'Puoi cambiarlo solo tra un turno e l\'altro, non a turno in corso'
+                            : 'Mostra posizionamento dei tuoi dischi live'
+                        }
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: '0.75rem',
+                          color: turnInProgress ? '#aaa' : '#666',
+                          cursor: turnInProgress ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={livePreviewOn}
+                          disabled={turnInProgress}
+                          onChange={(e) => {
+                            setLivePreviewOn(e.target.checked)
+                            localStorage.setItem('harmonies_live_preview', e.target.checked ? 'true' : 'false')
+                          }}
+                        />
+                        🧿 Live
+                      </label>
+                    )
+                  })()}
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#666', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
