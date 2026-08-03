@@ -18,17 +18,17 @@ function axialToWorld(q, r) {
 // Proporzioni riprese dalla versione 2D (discW:sideH ≈ 24:7 ≈ 3.4:1,
 // diametro:spessore) — già corrette, invariate.
 const DISC_RADIUS = HEX_SIZE * 0.5
-const DISC_HEIGHT = 0.26
+const DISC_HEIGHT = 0.31
 const TILE_THICKNESS = 0.06
 // Cubi Animale/Spirito della Natura: davvero cubici (stesso lato su
 // tutte e 3 le dimensioni), leggermente più piccoli di prima.
-const CUBE_SIZE = 0.42
+const CUBE_SIZE = 0.37
 
 function HexTile({ x, z, highlighted, onClick }) {
   return (
     <mesh position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]} onClick={onClick} receiveShadow>
       <cylinderGeometry args={[HEX_SIZE * 0.94, HEX_SIZE * 0.94, TILE_THICKNESS, 6]} />
-      <meshStandardMaterial color={highlighted ? '#fff3c4' : '#faf8f2'} />
+      <meshStandardMaterial color={highlighted ? '#fff3c4' : '#faf8f2'} roughness={0.55} />
     </mesh>
   )
 }
@@ -41,9 +41,9 @@ function Disc({ x, z, color, index }) {
     <mesh position={[x, y, z]} castShadow>
       <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_HEIGHT * 0.9, 28]} />
       {/* CylinderGeometry ha 3 gruppi di materiale: 0=lato, 1=cima, 2=fondo */}
-      <meshStandardMaterial attach="material-0" color={base} />
-      <meshStandardMaterial attach="material-1" color={top} />
-      <meshStandardMaterial attach="material-2" color={base} />
+      <meshStandardMaterial attach="material-0" color={base} roughness={0.55} />
+      <meshStandardMaterial attach="material-1" color={top} roughness={0.55} />
+      <meshStandardMaterial attach="material-2" color={base} roughness={0.55} />
     </mesh>
   )
 }
@@ -53,7 +53,7 @@ function CubeMarker({ x, z, stackHeight, isNatureSpirit }) {
   return (
     <mesh position={[x, y, z]} castShadow>
       <boxGeometry args={[CUBE_SIZE, CUBE_SIZE, CUBE_SIZE]} />
-      <meshStandardMaterial color={isNatureSpirit ? '#ffffff' : '#F59E0B'} />
+      <meshStandardMaterial color={isNatureSpirit ? '#ffffff' : '#F59E0B'} roughness={0.5} />
     </mesh>
   )
 }
@@ -88,9 +88,9 @@ export default function HexBoard3D({
 
   return (
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
-      <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
-        <ambientLight intensity={1.05} />
-        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.1} castShadow />
+      <Canvas shadows flat camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={0.85} castShadow />
         <OrbitControls
           target={[cx, 0, cz]}
           enablePan={false}
