@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { getNatureSpiritCard } from '../game-engine'
+import { lighten } from './DiscVisual'
 
 // Stessa formula di conversione assiale->pixel di HexBoard.jsx (2D),
 // qui riusata per posizionare le celle sul piano orizzontale (X,Z) —
@@ -14,16 +15,22 @@ function axialToWorld(q, r) {
   return [x, z]
 }
 
+// Colori un po' più chiari della versione 2D (qui l'illuminazione
+// scurisce comunque le superfici in ombra, quindi partire da un
+// colore più chiaro li mantiene leggibili).
 const DISC_COLORS = {
-  brown: '#8b5a2b',
-  blue: '#3b82f6',
-  green: '#16a34a',
-  grey: '#9ca3af',
-  red: '#dc2626',
-  yellow: '#eab308'
+  brown: '#a97a4a',
+  blue: '#60a5fa',
+  green: '#34a853',
+  grey: '#b8bfc7',
+  red: '#e6584a',
+  yellow: '#f2c34d'
 }
-const DISC_HEIGHT = 0.16
-const DISC_RADIUS = HEX_SIZE * 0.72
+// Proporzioni riprese dalla versione 2D (discW:sideH ≈ 24:7 ≈ 3.4:1,
+// diametro:spessore), ma più strette e più alte di prima per essere
+// più leggibili in 3D — prima erano quasi delle monete piatte.
+const DISC_RADIUS = HEX_SIZE * 0.5
+const DISC_HEIGHT = 0.26
 const TILE_THICKNESS = 0.06
 
 function HexTile({ x, z, highlighted, onClick }) {
@@ -37,10 +44,15 @@ function HexTile({ x, z, highlighted, onClick }) {
 
 function Disc({ x, z, color, index }) {
   const y = TILE_THICKNESS / 2 + DISC_HEIGHT * index + DISC_HEIGHT / 2
+  const base = DISC_COLORS[color] ?? '#999'
+  const top = lighten(base, 0.32)
   return (
     <mesh position={[x, y, z]} castShadow>
-      <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_HEIGHT * 0.92, 28]} />
-      <meshStandardMaterial color={DISC_COLORS[color] ?? '#999'} />
+      <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_HEIGHT * 0.9, 28]} />
+      {/* CylinderGeometry ha 3 gruppi di materiale: 0=lato, 1=cima, 2=fondo */}
+      <meshStandardMaterial attach="material-0" color={base} />
+      <meshStandardMaterial attach="material-1" color={top} />
+      <meshStandardMaterial attach="material-2" color={base} />
     </mesh>
   )
 }
@@ -84,8 +96,8 @@ export default function HexBoard3D({
   const cz = cells.reduce((s, c) => s + c.z, 0) / (cells.length || 1)
 
   return (
-    <div style={{ height: `${maxHeightVh}vh`, width: '100%', borderRadius: 12, overflow: 'hidden', background: '#dfe7d8' }}>
-      <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }}>
+    <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
+      <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
         <ambientLight intensity={0.75} />
         <directionalLight position={[cx + 6, 12, cz + 4]} intensity={0.9} castShadow />
         <OrbitControls
