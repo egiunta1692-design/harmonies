@@ -91,7 +91,7 @@ export default function HexBoard3D({
 
   return (
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
-      <Canvas shadows flat camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
+      <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
         <ambientLight intensity={1.1} />
         <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.2} castShadow />
         <OrbitControls

@@ -174,9 +174,8 @@ export default function Game({ profile }) {
     () => LIVE_PREVIEW_UNLOCKABLE && localStorage.getItem('harmonies_live_preview') === 'true'
   )
   const [joinError, setJoinError] = useState(null)
-  // Vista 3D solo della PROPRIA plancia (per ora — vedi nota più sotto
-  // sul perché non è offerta anche per gli avversari). Preferenza
-  // puramente locale, non sul database.
+  // Un solo interruttore controlla sia la propria plancia sia quelle
+  // degli avversari. Preferenza puramente locale, non sul database.
   const [board3D, setBoard3D] = useState(() => localStorage.getItem('harmonies_board_3d') === 'true')
 
   // Aggiorna ogni secondo, solo per far scorrere il timer di partita.
@@ -1426,7 +1425,11 @@ export default function Game({ profile }) {
                 {otherPlayers.map((p) => (
                   <div key={p.id} style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flexShrink: 0, width: 260 }}>
-                      <HexBoard boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
+                      {board3D ? (
+                        <HexBoard3D boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
+                      ) : (
+                        <HexBoard boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                       <p style={{ margin: '0 0 4px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
