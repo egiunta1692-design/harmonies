@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { getNatureSpiritCard } from '../game-engine'
-import { lighten } from './DiscVisual'
+import { lighten, DISC_HEX } from './DiscVisual'
 
 // Stessa formula di conversione assiale->pixel di HexBoard.jsx (2D),
 // qui riusata per posizionare le celle sul piano orizzontale (X,Z) —
@@ -15,36 +15,27 @@ function axialToWorld(q, r) {
   return [x, z]
 }
 
-// Colori un po' più chiari della versione 2D (qui l'illuminazione
-// scurisce comunque le superfici in ombra, quindi partire da un
-// colore più chiaro li mantiene leggibili).
-const DISC_COLORS = {
-  brown: '#a97a4a',
-  blue: '#60a5fa',
-  green: '#34a853',
-  grey: '#b8bfc7',
-  red: '#e6584a',
-  yellow: '#f2c34d'
-}
 // Proporzioni riprese dalla versione 2D (discW:sideH ≈ 24:7 ≈ 3.4:1,
-// diametro:spessore), ma più strette e più alte di prima per essere
-// più leggibili in 3D — prima erano quasi delle monete piatte.
+// diametro:spessore) — già corrette, invariate.
 const DISC_RADIUS = HEX_SIZE * 0.5
 const DISC_HEIGHT = 0.26
 const TILE_THICKNESS = 0.06
+// Cubi Animale/Spirito della Natura: davvero cubici (stesso lato su
+// tutte e 3 le dimensioni), leggermente più piccoli di prima.
+const CUBE_SIZE = 0.42
 
 function HexTile({ x, z, highlighted, onClick }) {
   return (
     <mesh position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]} onClick={onClick} receiveShadow>
       <cylinderGeometry args={[HEX_SIZE * 0.94, HEX_SIZE * 0.94, TILE_THICKNESS, 6]} />
-      <meshStandardMaterial color={highlighted ? '#fff3c4' : '#f1efe8'} />
+      <meshStandardMaterial color={highlighted ? '#fff3c4' : '#faf8f2'} />
     </mesh>
   )
 }
 
 function Disc({ x, z, color, index }) {
   const y = TILE_THICKNESS / 2 + DISC_HEIGHT * index + DISC_HEIGHT / 2
-  const base = DISC_COLORS[color] ?? '#999'
+  const base = DISC_HEX[color] ?? '#999'
   const top = lighten(base, 0.32)
   return (
     <mesh position={[x, y, z]} castShadow>
@@ -58,10 +49,10 @@ function Disc({ x, z, color, index }) {
 }
 
 function CubeMarker({ x, z, stackHeight, isNatureSpirit }) {
-  const y = TILE_THICKNESS / 2 + DISC_HEIGHT * stackHeight + 0.1
+  const y = TILE_THICKNESS / 2 + DISC_HEIGHT * stackHeight + CUBE_SIZE / 2
   return (
     <mesh position={[x, y, z]} castShadow>
-      <boxGeometry args={[0.5, 0.2, 0.5]} />
+      <boxGeometry args={[CUBE_SIZE, CUBE_SIZE, CUBE_SIZE]} />
       <meshStandardMaterial color={isNatureSpirit ? '#ffffff' : '#F59E0B'} />
     </mesh>
   )
@@ -98,8 +89,8 @@ export default function HexBoard3D({
   return (
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
       <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
-        <ambientLight intensity={0.75} />
-        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={0.9} castShadow />
+        <ambientLight intensity={1.05} />
+        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.1} castShadow />
         <OrbitControls
           target={[cx, 0, cz]}
           enablePan={false}
