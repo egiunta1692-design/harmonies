@@ -798,15 +798,17 @@ export default function Game({ profile }) {
       }
     }
 
-    // Il giro finale è completo (tutti hanno giocato lo stesso numero di
-    // turni) quando il prossimo turno tornerebbe a chi l'ha fatto
-    // scattare: a quel punto la partita finisce, quel giocatore non
-    // gioca un turno in più.
-    if (finalRoundActive && triggerPlayerId) {
-      const triggerIndex = freshGame.turn_order.indexOf(triggerPlayerId)
-      if (nextIndex === triggerIndex) {
-        updates.status = 'finished'
-      }
+    // Il round è completo (tutti hanno giocato lo stesso numero di
+    // turni, come richiede il regolamento) quando il prossimo turno
+    // tornerebbe all'inizio dell'ordine (indice 0) — indipendentemente
+    // da CHI ha fatto scattare la condizione. Se a farla scattare è
+    // proprio l'ultimo giocatore del round, il round è già completo in
+    // quel momento: la partita finisce subito, senza dare al primo
+    // giocatore un turno in più (bug precedente: si girava fino a
+    // tornare all'indice di chi aveva fatto scattare la condizione,
+    // che è sbagliato quando quello è l'ultimo del round).
+    if (finalRoundActive && nextIndex === 0) {
+      updates.status = 'finished'
     }
 
     await supabase.from('games').update(updates).eq('id', game.id)
