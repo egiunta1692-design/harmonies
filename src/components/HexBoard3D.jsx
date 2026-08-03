@@ -31,7 +31,7 @@ function HexTile({ x, z, highlighted, onClick }) {
   return (
     <mesh position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]} onClick={onClick} receiveShadow>
       <cylinderGeometry args={[HEX_SIZE * 0.94, HEX_SIZE * 0.94, TILE_THICKNESS, 6]} />
-      <meshStandardMaterial color={highlighted ? '#f3ce5e' : '#fef7ec'} roughness={0.55} />
+      <meshStandardMaterial color={highlighted ? '#f3ce5e' : '#f9f6f1'} roughness={0.55} />
     </mesh>
   )
 }
