@@ -31,7 +31,7 @@ function HexTile({ x, z, highlighted, onClick }) {
   return (
     <mesh position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]} onClick={onClick} receiveShadow>
       <cylinderGeometry args={[HEX_SIZE * 0.94, HEX_SIZE * 0.94, TILE_THICKNESS, 6]} />
-      <meshStandardMaterial color={highlighted ? '#f3ce5e' : '#f9f6f1'} roughness={0.55} />
+      <meshStandardMaterial color={highlighted ? '#f3ce5e' : '#ffe7c2'} roughness={0.55} />
     </mesh>
   )
 }
@@ -91,9 +91,14 @@ export default function HexBoard3D({
 
   return (
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
-      <Canvas shadows camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
+      <Canvas
+        shadows
+        camera={{ position: [cx, compact ? 12 : 9, cz + (compact ? 10 : 7)], fov: 42 }}
+        gl={{ alpha: true }}
+        style={{ background: 'transparent' }}
+      >
         <ambientLight intensity={1.1} />
-        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.2} castShadow />
+        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.5} castShadow />
         <OrbitControls
           target={[cx, 0, cz]}
           enablePan={false}
