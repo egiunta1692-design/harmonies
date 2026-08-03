@@ -93,7 +93,7 @@ export default function HexBoard3D({
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
       <Canvas
         shadows
-        camera={{ position: [cx, compact ? 12 : 8, cz + (compact ? 10 : 6)], fov: 42 }}
+        camera={{ position: [cx, compact ? 12 : 10, cz + (compact ? 10 : 8)], fov: 42 }}
         gl={{ alpha: true }}
         style={{ background: 'transparent' }}
       >
