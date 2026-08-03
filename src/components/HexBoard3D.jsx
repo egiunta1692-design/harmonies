@@ -18,25 +18,28 @@ function axialToWorld(q, r) {
 // Proporzioni riprese dalla versione 2D (discW:sideH ≈ 24:7 ≈ 3.4:1,
 // diametro:spessore) — già corrette, invariate.
 const DISC_RADIUS = HEX_SIZE * 0.5
-const DISC_HEIGHT = 0.31
-const TILE_THICKNESS = 0.06
+const DISC_HEIGHT = 0.38
+const TILE_THICKNESS = 0.1
 // Cubi Animale/Spirito della Natura: davvero cubici (stesso lato su
 // tutte e 3 le dimensioni), leggermente più piccoli di prima.
-const CUBE_SIZE = 0.37
+const CUBE_SIZE = 0.35
+// Stessi colori del 2D (DISC_HEX), tranne il grigio: nella resa 3D
+// risultava troppo scuro/spento, qui schiarito appositamente.
+const DISC_COLORS_3D = { ...DISC_HEX, grey: '#b5b7ba' }
 
 function HexTile({ x, z, highlighted, onClick }) {
   return (
     <mesh position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]} onClick={onClick} receiveShadow>
       <cylinderGeometry args={[HEX_SIZE * 0.94, HEX_SIZE * 0.94, TILE_THICKNESS, 6]} />
-      <meshStandardMaterial color={highlighted ? '#fff3c4' : '#faf8f2'} roughness={0.55} />
+      <meshStandardMaterial color={highlighted ? '#f3ce5e' : '#ffe7c2'} roughness={0.55} />
     </mesh>
   )
 }
 
 function Disc({ x, z, color, index }) {
   const y = TILE_THICKNESS / 2 + DISC_HEIGHT * index + DISC_HEIGHT / 2
-  const base = DISC_HEX[color] ?? '#999'
-  const top = lighten(base, 0.32)
+  const base = DISC_COLORS_3D[color] ?? '#999'
+  const top = lighten(base, 0.02)
   return (
     <mesh position={[x, y, z]} castShadow>
       <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_HEIGHT * 0.9, 28]} />
@@ -89,8 +92,8 @@ export default function HexBoard3D({
   return (
     <div style={{ height: `${maxHeightVh}vh`, width: '100%', overflow: 'hidden' }}>
       <Canvas shadows flat camera={{ position: [cx, 9, cz + 7], fov: 42 }} gl={{ alpha: true }} style={{ background: 'transparent' }}>
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={0.85} castShadow />
+        <ambientLight intensity={1.1} />
+        <directionalLight position={[cx + 6, 12, cz + 4]} intensity={1.2} castShadow />
         <OrbitControls
           target={[cx, 0, cz]}
           enablePan={false}
