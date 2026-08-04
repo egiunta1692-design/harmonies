@@ -948,12 +948,13 @@ export default function Game({ profile }) {
     : []
 
   const cardBoxStyle = (selected, isNatureSpirit = false) => ({
-    border: selected ? '2px solid #d97706' : '1px solid #ccc',
-    borderRadius: 6,
+    border: selected ? '1.5px solid #d97706' : '1px solid rgba(0,0,0,0.08)',
+    borderRadius: 12,
     padding: 6,
     minWidth: 92,
     flexShrink: 0,
-    background: isNatureSpirit ? '#ddffbd' : '#fff',
+    background: isNatureSpirit ? 'linear-gradient(160deg, #eaffd6 0%, #d4f7b8 100%)' : 'linear-gradient(160deg, #ffffff 0%, #f6f4ee 100%)',
+    boxShadow: selected ? '0 0 0 3px rgba(217,119,6,0.25), 0 4px 10px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.1)',
     position: 'relative'
   })
 
@@ -1157,10 +1158,10 @@ export default function Game({ profile }) {
                             style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
                           >
                             <CardZoomButton card={card} />
-                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                            <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                             <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
                             <HabitatIcon habitat={card.habitat} />
-                            <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>🐾</span>
+                            <span style={{ position: 'absolute', bottom: 4, right: 4, fontSize: 10, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>🐾</span>
                           </motion.div>
                         )
                       })}
@@ -1315,7 +1316,7 @@ export default function Game({ profile }) {
                         }}
                       >
                         <CardZoomButton card={card} entry={entry} />
-                        <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                        <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                         {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                         {isNatureSpirit &&
                           (Array.isArray(card.description) ? (
@@ -1327,12 +1328,12 @@ export default function Game({ profile }) {
                           ) : (
                             <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
                           ))}
-                        <div style={{ fontSize: 10, color: '#999' }}>
+                        <div style={{ fontSize: 10, color: '#8a8272', borderTop: '1px solid rgba(0,0,0,0.07)', marginTop: 3, paddingTop: 3 }}>
                           {entry.cubesPlaced}/{totalCubes}
                           {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                         </div>
                         <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
-                        <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
+                        <span style={{ position: 'absolute', bottom: 4, right: 4, fontSize: 10, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
                       </motion.div>
                     )
                   })}
@@ -1476,7 +1477,7 @@ export default function Game({ profile }) {
                                 style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}
                               >
                               <CardZoomButton card={card} entry={entry} />
-                              <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                              <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                               {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                               {isNatureSpirit &&
                                 (Array.isArray(card.description) ? (
@@ -1488,12 +1489,12 @@ export default function Game({ profile }) {
                                 ) : (
                                   <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
                                 ))}
-                              <div style={{ fontSize: 10, color: '#999' }}>
+                              <div style={{ fontSize: 10, color: '#8a8272', borderTop: '1px solid rgba(0,0,0,0.07)', marginTop: 3, paddingTop: 3 }}>
                                 {entry.cubesPlaced}/{totalCubes}
                                 {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
                               </div>
                               <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
-                              <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
+                              <span style={{ position: 'absolute', bottom: 4, right: 4, fontSize: 10, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
                             </motion.div>
                             )
                           })}
@@ -1605,7 +1606,7 @@ export default function Game({ profile }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {ANIMAL_CARDS.map((card) => (
                 <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 110 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                   <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
                   <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>{card.points.length} cubi</div>
                   <HabitatIcon habitat={card.habitat} />
@@ -1650,7 +1651,7 @@ export default function Game({ profile }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {NATURE_SPIRIT_CARDS.map((card) => (
                 <div key={card.id} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8, width: 140, background: '#ddffbd' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                   {Array.isArray(card.description) ? (
                     <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
                       {card.description.map((line, i) => (
