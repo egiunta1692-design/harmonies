@@ -80,18 +80,22 @@ const CompletedBadge = () => (
   <span
     style={{
       position: 'absolute',
-      top: 4,
+      bottom: 4,
       left: 4,
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: 700,
       color: '#2e6b3e',
       background: 'rgba(255,255,255,0.9)',
-      borderRadius: 999,
-      padding: '2px 6px',
+      borderRadius: '50%',
+      width: 18,
+      height: 18,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
     }}
   >
-    ✓ completata
+    ✓
   </span>
 )
 
@@ -1342,6 +1346,7 @@ export default function Game({ profile }) {
                         {completed && <CompletedBadge />}
                         <CardZoomButton card={card} entry={entry} />
                         <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
+                        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', margin: '0 0 4px' }} />
                         {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                         {isNatureSpirit &&
                           (Array.isArray(card.description) ? (
@@ -1505,6 +1510,7 @@ export default function Game({ profile }) {
                               {completed && <CompletedBadge />}
                               <CardZoomButton card={card} entry={entry} />
                               <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
+                              <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', margin: '0 0 4px' }} />
                               {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
                               {isNatureSpirit &&
                                 (Array.isArray(card.description) ? (
