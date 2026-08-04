@@ -1424,20 +1424,12 @@ export default function Game({ profile }) {
             >
               <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {otherPlayers.map((p) => (
-                  <div key={p.id} style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0, alignItems: 'center' }}>
-                    <div style={{ flexShrink: 0, width: 260, height: '100%', display: 'flex', alignItems: 'center' }}>
+                  <div key={p.id} style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flexShrink: 0, width: 260 }}>
                       {board3D ? (
-                        <HexBoard3D
-                          boardState={p.live_preview?.board_state ?? p.board_state}
-                          compact
-                          maxHeightVh={Math.min(50, Math.max(20, 90 / otherPlayers.length))}
-                        />
+                        <HexBoard3D boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
                       ) : (
-                        <HexBoard
-                          boardState={p.live_preview?.board_state ?? p.board_state}
-                          compact
-                          maxHeightVh={Math.min(50, Math.max(20, 90 / otherPlayers.length))}
-                        />
+                        <HexBoard boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
