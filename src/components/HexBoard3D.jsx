@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import { BackSide } from 'three'
 import { getNatureSpiritCard } from '../game-engine'
 import { lighten, DISC_HEX } from './DiscVisual'
 
@@ -26,6 +27,14 @@ const CUBE_SIZE = 0.35
 // Stessi colori del 2D (DISC_HEX), tranne il grigio: nella resa 3D
 // risultava troppo scuro/spento, qui schiarito appositamente.
 const DISC_COLORS_3D = { ...DISC_HEX, grey: '#b5b7ba' }
+// Contorno dei dischi: un "guscio" leggermente più grande dietro al
+// disco, con le facce visibili solo dall'interno (BackSide) — più
+// affidabile delle linee sottili di Three.js, il cui spessore viene
+// ignorato dalla maggior parte delle GPU/browser (resta sempre 1px).
+const OUTLINE_ENABLED = true
+const OUTLINE_COLOR = '#000000'
+const OUTLINE_THICKNESS = 0.03
+const OUTLINE_OPACITY = 0.35
 
 function HexTile({ x, z, highlighted, onClick }) {
   return (
@@ -40,14 +49,30 @@ function Disc({ x, z, color, index }) {
   const y = TILE_THICKNESS / 2 + DISC_HEIGHT * index + DISC_HEIGHT / 2
   const base = DISC_COLORS_3D[color] ?? '#999'
   const top = lighten(base, 0.02)
+  const discH = DISC_HEIGHT * 0.9
   return (
-    <mesh position={[x, y, z]} castShadow>
-      <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_HEIGHT * 0.9, 28]} />
-      {/* CylinderGeometry ha 3 gruppi di materiale: 0=lato, 1=cima, 2=fondo */}
-      <meshStandardMaterial attach="material-0" color={base} roughness={0.55} />
-      <meshStandardMaterial attach="material-1" color={top} roughness={0.55} />
-      <meshStandardMaterial attach="material-2" color={base} roughness={0.55} />
-    </mesh>
+    <>
+      <mesh position={[x, y, z]} castShadow>
+        <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, discH, 28]} />
+        {/* CylinderGeometry ha 3 gruppi di materiale: 0=lato, 1=cima, 2=fondo */}
+        <meshStandardMaterial attach="material-0" color={base} roughness={0.55} />
+        <meshStandardMaterial attach="material-1" color={top} roughness={0.55} />
+        <meshStandardMaterial attach="material-2" color={base} roughness={0.55} />
+      </mesh>
+      {OUTLINE_ENABLED && (
+        <mesh position={[x, y, z]}>
+          <cylinderGeometry
+            args={[
+              DISC_RADIUS * (1 + OUTLINE_THICKNESS),
+              DISC_RADIUS * (1 + OUTLINE_THICKNESS),
+              discH * (1 + OUTLINE_THICKNESS * 0.5),
+              28
+            ]}
+          />
+          <meshBasicMaterial color={OUTLINE_COLOR} side={BackSide} transparent opacity={OUTLINE_OPACITY} />
+        </mesh>
+      )}
+    </>
   )
 }
 
