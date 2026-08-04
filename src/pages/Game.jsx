@@ -1141,7 +1141,7 @@ export default function Game({ profile }) {
 
                 {/* Carte Animale a terra */}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 6px 8px' }}>
                     <AnimatePresence mode="popLayout">
                       {game.animal_row.map((cardId, i) => {
                         if (!cardId) return <div key={`empty-${i}`} style={{ ...cardBoxStyle(false), opacity: 0.3 }} />
@@ -1159,7 +1159,7 @@ export default function Game({ profile }) {
                           >
                             <CardZoomButton card={card} />
                             <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
-                            <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                            <div style={{ fontSize: 11, color: '#8a8272', borderTop: '1px solid rgba(0,0,0,0.07)', marginTop: 3, paddingTop: 3 }}>{card.points.join('/')}</div>
                             <HabitatIcon habitat={card.habitat} />
                             <span style={{ position: 'absolute', bottom: 4, right: 4, fontSize: 10, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>🐾</span>
                           </motion.div>
@@ -1262,7 +1262,7 @@ export default function Game({ profile }) {
               display: 'flex',
               minHeight: 0,
               gap: 12,
-              background: game.board_mode === 'isole' ? '#cfe8f5' : panelStyle.background
+              background: game.board_mode === 'isole' ? '#81b2cb' : panelStyle.background
             }}
           >
             {/* Colonna sinistra: nome+contatore in alto, sotto le carte prese */}
@@ -1289,7 +1289,8 @@ export default function Game({ profile }) {
                   gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
                   gridAutoRows: 'min-content',
                   gap: 6,
-                  alignContent: 'start'
+                  alignContent: 'start',
+                  padding: '8px 6px'
                 }}
               >
                 <AnimatePresence mode="popLayout">
@@ -1418,17 +1419,25 @@ export default function Game({ profile }) {
                 display: 'flex',
                 flexDirection: 'column',
                 minHeight: 0,
-                background: game.board_mode === 'isole' ? '#cfe8f5' : panelStyle.background
+                background: game.board_mode === 'isole' ? '#81b2cb' : panelStyle.background
               }}
             >
               <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {otherPlayers.map((p) => (
-                  <div key={p.id} style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flexShrink: 0, width: 260 }}>
+                  <div key={p.id} style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0, alignItems: 'center' }}>
+                    <div style={{ flexShrink: 0, width: 260, height: '100%', display: 'flex', alignItems: 'center' }}>
                       {board3D ? (
-                        <HexBoard3D boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
+                        <HexBoard3D
+                          boardState={p.live_preview?.board_state ?? p.board_state}
+                          compact
+                          maxHeightVh={Math.min(50, Math.max(20, 90 / otherPlayers.length))}
+                        />
                       ) : (
-                        <HexBoard boardState={p.live_preview?.board_state ?? p.board_state} compact maxHeightVh={26} />
+                        <HexBoard
+                          boardState={p.live_preview?.board_state ?? p.board_state}
+                          compact
+                          maxHeightVh={Math.min(50, Math.max(20, 90 / otherPlayers.length))}
+                        />
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
