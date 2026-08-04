@@ -72,6 +72,29 @@ const cardHoverAnim = {
   transition: { type: 'spring', stiffness: 320, damping: 22 }
 }
 
+// Stile condiviso per una carta completata (tutti i cubi piazzati):
+// più chiara e desaturata, per essere inequivocabilmente "spenta"
+// rispetto a quelle ancora giocabili.
+const completedCardStyle = { opacity: 0.45, filter: 'grayscale(0.6)' }
+const CompletedBadge = () => (
+  <span
+    style={{
+      position: 'absolute',
+      top: 4,
+      left: 4,
+      fontSize: 9,
+      fontWeight: 700,
+      color: '#2e6b3e',
+      background: 'rgba(255,255,255,0.9)',
+      borderRadius: 999,
+      padding: '2px 6px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+    }}
+  >
+    ✓ completata
+  </span>
+)
+
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
 // azioni (dischi E cubi) fatte in questo turno sopra la plancia
 // confermata. Dischi e cubi condividono la stessa cronologia perché il
@@ -1312,10 +1335,11 @@ export default function Game({ profile }) {
                         style={{
                           ...cardBoxStyle(selectedCardForCube === entry, isNatureSpirit),
                           minWidth: 0,
-                          opacity: completed ? 0.6 : 1,
+                          ...(completed ? completedCardStyle : {}),
                           cursor: completed ? 'default' : 'pointer'
                         }}
                       >
+                        {completed && <CompletedBadge />}
                         <CardZoomButton card={card} entry={entry} />
                         <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                         {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
@@ -1464,6 +1488,7 @@ export default function Game({ profile }) {
                             .map((entry) => {
                             const card = getCardDef(entry.cardId)
                             const totalCubes = cardCubeCount(card)
+                            const completed = entry.cubesPlaced >= totalCubes
                             const isNatureSpirit = !card.points
                             const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
                             return (
@@ -1473,10 +1498,11 @@ export default function Game({ profile }) {
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                whileHover={{ scale: 1.04, y: -3 }}
+                                whileHover={completed ? {} : { scale: 1.04, y: -3 }}
                                 transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                                style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}
+                                style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0, ...(completed ? completedCardStyle : {}) }}
                               >
+                              {completed && <CompletedBadge />}
                               <CardZoomButton card={card} entry={entry} />
                               <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3d3222', letterSpacing: '0.01em', marginBottom: 2, lineHeight: 1.25 }}>{card.name}</div>
                               {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
