@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { joinGame } from '../lib/joinGame'
 import HexBoard from '../components/HexBoard'
 import HexBoard3D from '../components/HexBoard3D'
+import { motion, AnimatePresence } from 'framer-motion'
 import HabitatIcon from '../components/HabitatIcon'
 import ScoringReference from '../components/ScoringReference'
 import FinalScoreboard from '../components/FinalScoreboard'
@@ -59,6 +60,16 @@ function dedupeByCardId(entries) {
   const map = new Map()
   for (const e of entries) map.set(e.cardId, e)
   return [...map.values()]
+}
+
+// Micro-animazione condivisa da ogni carta cliccabile: si solleva e si
+// inclina leggermente al passaggio del mouse, torna a posto con una
+// piccola molla — nessuna modifica a posizione/dimensioni di base,
+// solo un tocco "fisico" in più.
+const cardHoverAnim = {
+  whileHover: { scale: 1.06, y: -6, rotate: -1.5, boxShadow: '0 10px 20px rgba(0,0,0,0.28)', zIndex: 5 },
+  whileTap: { scale: 0.97 },
+  transition: { type: 'spring', stiffness: 320, damping: 22 }
 }
 
 // Ricostruisce la plancia "in bozza" applicando, in ordine, tutte le
@@ -1130,23 +1141,30 @@ export default function Game({ profile }) {
                 {/* Carte Animale a terra */}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-                    {game.animal_row.map((cardId, i) => {
-                      if (!cardId) return <div key={i} style={{ ...cardBoxStyle(false), opacity: 0.3 }} />
-                      const card = getAnimalCard(cardId)
-                      return (
-                        <div
-                          key={cardId}
-                          onClick={() => handleTakeAnimalCard(cardId)}
-                          style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
-                        >
-                          <CardZoomButton card={card} />
-                          <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                          <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
-                          <HabitatIcon habitat={card.habitat} />
-                          <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>🐾</span>
-                        </div>
-                      )
-                    })}
+                    <AnimatePresence mode="popLayout">
+                      {game.animal_row.map((cardId, i) => {
+                        if (!cardId) return <div key={`empty-${i}`} style={{ ...cardBoxStyle(false), opacity: 0.3 }} />
+                        const card = getAnimalCard(cardId)
+                        return (
+                          <motion.div
+                            key={cardId}
+                            layout
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            {...cardHoverAnim}
+                            onClick={() => handleTakeAnimalCard(cardId)}
+                            style={{ ...cardBoxStyle(false), cursor: isMyTurn ? 'pointer' : 'default' }}
+                          >
+                            <CardZoomButton card={card} />
+                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                            <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>
+                            <HabitatIcon habitat={card.habitat} />
+                            <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>🐾</span>
+                          </motion.div>
+                        )
+                      })}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
@@ -1273,45 +1291,52 @@ export default function Game({ profile }) {
                   alignContent: 'start'
                 }}
               >
-                {currentHand.map((entry, i) => {
-                  const card = getCardDef(entry.cardId)
-                  const totalCubes = cardCubeCount(card)
-                  const completed = entry.cubesPlaced >= totalCubes
-                  const isNatureSpirit = !card.points
-                  const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => !completed && handleSelectCardForCube(entry)}
-                      style={{
-                        ...cardBoxStyle(selectedCardForCube === entry, isNatureSpirit),
-                        minWidth: 0,
-                        opacity: completed ? 0.6 : 1,
-                        cursor: completed ? 'default' : 'pointer'
-                      }}
-                    >
-                      <CardZoomButton card={card} entry={entry} />
-                      <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                      {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
-                      {isNatureSpirit &&
-                        (Array.isArray(card.description) ? (
-                          <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
-                            {card.description.map((line, j) => (
-                              <li key={j}>{line}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
-                        ))}
-                      <div style={{ fontSize: 10, color: '#999' }}>
-                        {entry.cubesPlaced}/{totalCubes}
-                        {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
-                      </div>
-                      <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
-                      <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
-                    </div>
-                  )
-                })}
+                <AnimatePresence mode="popLayout">
+                  {currentHand.map((entry) => {
+                    const card = getCardDef(entry.cardId)
+                    const totalCubes = cardCubeCount(card)
+                    const completed = entry.cubesPlaced >= totalCubes
+                    const isNatureSpirit = !card.points
+                    const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
+                    return (
+                      <motion.div
+                        key={entry.cardId}
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        {...(!completed ? cardHoverAnim : { transition: cardHoverAnim.transition })}
+                        onClick={() => !completed && handleSelectCardForCube(entry)}
+                        style={{
+                          ...cardBoxStyle(selectedCardForCube === entry, isNatureSpirit),
+                          minWidth: 0,
+                          opacity: completed ? 0.6 : 1,
+                          cursor: completed ? 'default' : 'pointer'
+                        }}
+                      >
+                        <CardZoomButton card={card} entry={entry} />
+                        <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                        {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
+                        {isNatureSpirit &&
+                          (Array.isArray(card.description) ? (
+                            <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
+                              {card.description.map((line, j) => (
+                                <li key={j}>{line}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                          ))}
+                        <div style={{ fontSize: 10, color: '#999' }}>
+                          {entry.cubesPlaced}/{totalCubes}
+                          {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
+                        </div>
+                        <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
+                        <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -1428,40 +1453,51 @@ export default function Game({ profile }) {
                           alignContent: 'start'
                         }}
                       >
-                        {dedupeByCardId([
-                          ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []).filter((c) => !getNatureSpiritCard(c.cardId)),
-                          ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
-                        ])
-                          .filter((entry) => getCardDef(entry.cardId))
-                          .map((entry, i) => {
-                          const card = getCardDef(entry.cardId)
-                          const totalCubes = cardCubeCount(card)
-                          const isNatureSpirit = !card.points
-                          const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
-                          return (
-                            <div key={i} style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}>
-                            <CardZoomButton card={card} entry={entry} />
-                            <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
-                            {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
-                            {isNatureSpirit &&
-                              (Array.isArray(card.description) ? (
-                                <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
-                                  {card.description.map((line, j) => (
-                                    <li key={j}>{line}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
-                              ))}
-                            <div style={{ fontSize: 10, color: '#999' }}>
-                              {entry.cubesPlaced}/{totalCubes}
-                              {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
-                            </div>
-                            <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
-                            <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
-                          </div>
-                          )
-                        })}
+                        <AnimatePresence mode="popLayout">
+                          {dedupeByCardId([
+                            ...(p.live_preview?.animal_cards ?? p.animal_cards ?? []).filter((c) => !getNatureSpiritCard(c.cardId)),
+                            ...(p.nature_spirit_card ? [p.nature_spirit_card] : [])
+                          ])
+                            .filter((entry) => getCardDef(entry.cardId))
+                            .map((entry) => {
+                            const card = getCardDef(entry.cardId)
+                            const totalCubes = cardCubeCount(card)
+                            const isNatureSpirit = !card.points
+                            const currentPoints = !isNatureSpirit && entry.cubesPlaced > 0 ? card.points[entry.cubesPlaced - 1] : null
+                            return (
+                              <motion.div
+                                key={entry.cardId}
+                                layout
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                whileHover={{ scale: 1.04, y: -3 }}
+                                transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+                                style={{ ...cardBoxStyle(false, isNatureSpirit), minWidth: 0 }}
+                              >
+                              <CardZoomButton card={card} entry={entry} />
+                              <div style={{ fontWeight: 'bold', fontSize: 12 }}>{card.name}</div>
+                              {!isNatureSpirit && <div style={{ fontSize: 11, color: '#666' }}>{card.points.join('/')}</div>}
+                              {isNatureSpirit &&
+                                (Array.isArray(card.description) ? (
+                                  <ul style={{ margin: '0 0 4px', paddingLeft: 14, fontSize: 10, color: '#666' }}>
+                                    {card.description.map((line, j) => (
+                                      <li key={j}>{line}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{card.description}</div>
+                                ))}
+                              <div style={{ fontSize: 10, color: '#999' }}>
+                                {entry.cubesPlaced}/{totalCubes}
+                                {currentPoints !== null ? ` — ${currentPoints} pt` : ''}
+                              </div>
+                              <HabitatIcon habitat={card.habitat} cubeColor={isNatureSpirit ? '#fff' : undefined} />
+                              <span style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 12 }}>{isNatureSpirit ? '🌿' : '🐾'}</span>
+                            </motion.div>
+                            )
+                          })}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </div>
@@ -1708,8 +1744,13 @@ export default function Game({ profile }) {
               {myPlayer.nature_spirit_choices.map((cardId) => {
                 const card = getNatureSpiritCard(cardId)
                 return (
-                  <div
+                  <motion.div
                     key={cardId}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.05, y: -6, boxShadow: '0 12px 24px rgba(0,0,0,0.3)' }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                     onClick={() => handleChooseNatureSpirit(cardId)}
                     style={{
                       border: '2px solid #ccc',
@@ -1733,7 +1774,7 @@ export default function Game({ profile }) {
                     ) : (
                       <p style={{ margin: '8px 0 0', fontSize: 11, color: '#666' }}>{card.description}</p>
                     )}
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
