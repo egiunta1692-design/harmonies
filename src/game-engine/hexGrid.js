@@ -64,26 +64,31 @@ export function rotate60(q, r, steps) {
 }
 
 // Forma della plancia giocatore, ricostruita dai conteggi ESATTI forniti
-// dall'utente colonna per colonna sulle plance fisiche:
-// - Standard (Fiume): 7 colonne alternate 4,3,4,3,4,3,4 = 25 caselle
-// - Isole: 7 colonne alternate 5,4,5,4,5,4,5 = 32 caselle
+// dall'utente colonna per colonna sulle plance fisiche. Le due forme
+// sono state scambiate rispetto all'assegnazione originale, e alla
+// nuova plancia Fiume sono state tolte le 2 colonne più a destra:
+// - Standard (Fiume): 5 colonne alternate 5,4,5,4,5 = 23 caselle
+//   (era la forma "Isole" originale, 7 colonne, con le ultime 2 tolte)
+// - Isole: 7 colonne alternate 4,3,4,3,4,3,4 = 25 caselle
+//   (era la forma "Standard" originale, invariata)
 //
 // Le colonne "corte" si incastrano naturalmente a metà altezza tra due
 // caselle della colonna adiacente "alta" grazie alla formula assiale
 // flat-top di HexBoard — ma quella stessa formula fa anche "scivolare"
 // ogni colonna un po' più in basso della precedente (la coordinata y
-// dipende anche da q). Su 7 colonne questa deriva si accumula e crea un
-// parallelogramma inclinato invece della sagoma verticale della foto.
+// dipende anche da q). Su più colonne questa deriva si accumula e crea
+// un parallelogramma inclinato invece della sagoma verticale della foto.
 // La correggiamo spostando la coordinata r di ogni colonna di
 // -floor(colonna/2): così le colonne con lo stesso numero di esagoni
-// (0&2&4&6, oppure 1&3&5) restano allo stesso livello, mentre
-// l'incastro a metà altezza tra colonne adiacenti resta corretto (è
-// solo un cambio di origine per colonna, non tocca le adiacenze).
+// restano allo stesso livello, mentre l'incastro a metà altezza tra
+// colonne adiacenti resta corretto (è solo un cambio di origine per
+// colonna, non tocca le adiacenze).
 export function createBoardShape(mode = 'standard') {
-  const tall = mode === 'isole' ? 5 : 4
-  const short = mode === 'isole' ? 4 : 3
+  const tall = mode === 'isole' ? 4 : 5
+  const short = mode === 'isole' ? 3 : 4
+  const numCols = mode === 'isole' ? 7 : 5
   const cells = []
-  for (let col = 0; col < 7; col++) {
+  for (let col = 0; col < numCols; col++) {
     const len = col % 2 === 0 ? tall : short
     const rOffset = Math.floor(col / 2)
     for (let i = 0; i < len; i++) {
