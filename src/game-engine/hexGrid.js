@@ -65,13 +65,25 @@ export function rotate60(q, r, steps) {
 
 // Forma della plancia giocatore, ricostruita dai conteggi ESATTI forniti
 // dall'utente colonna per colonna sulle plance fisiche. Le due forme
-// sono state scambiate rispetto all'assegnazione originale, e alla
-// nuova plancia Fiume sono state tolte le 2 colonne più a destra:
-// - Standard (Fiume): 5 colonne alternate 5,4,5,4,5 = 23 caselle
-//   (era la forma "Isole" originale, 7 colonne, con le ultime 2 tolte)
-// - Isole: 7 colonne alternate 4,3,4,3,4,3,4 = 25 caselle
-//   (era la forma "Standard" originale, invariata)
-//
+// sono state scambiate rispetto all'assegnazione originale:
+// - Standard (Fiume): era la forma "Isole" originale (7 colonne
+//   alternate 5,4,5,4,5,4,5), con le 2 colonne più a destra tolte
+//   (5 colonne, 23 caselle) e poi ruotata di 60° in senso orario —
+//   l'unica rotazione "pulita" possibile su una griglia esagonale
+//   (90° non è geometricamente rappresentabile, gli esagoni non si
+//   incastrerebbero più). Le coordinate qui sotto sono il risultato
+//   già calcolato di quella rotazione (cambio di coordinate rigido:
+//   preserva tutte le adiacenze originali).
+// - Isole: è la forma "Standard" originale, invariata (7 colonne
+//   alternate 4,3,4,3,4,3,4 = 25 caselle).
+const RIVER_SHAPE = [
+  { q: 0, r: 4 }, { q: 1, r: 4 }, { q: 2, r: 4 }, { q: 3, r: 4 }, { q: 4, r: 4 },
+  { q: 1, r: 3 }, { q: 2, r: 3 }, { q: 3, r: 3 }, { q: 4, r: 3 },
+  { q: 1, r: 2 }, { q: 2, r: 2 }, { q: 3, r: 2 }, { q: 4, r: 2 }, { q: 5, r: 2 },
+  { q: 2, r: 1 }, { q: 3, r: 1 }, { q: 4, r: 1 }, { q: 5, r: 1 },
+  { q: 2, r: 0 }, { q: 3, r: 0 }, { q: 4, r: 0 }, { q: 5, r: 0 }, { q: 6, r: 0 }
+]
+
 // Le colonne "corte" si incastrano naturalmente a metà altezza tra due
 // caselle della colonna adiacente "alta" grazie alla formula assiale
 // flat-top di HexBoard — ma quella stessa formula fa anche "scivolare"
@@ -82,13 +94,16 @@ export function rotate60(q, r, steps) {
 // -floor(colonna/2): così le colonne con lo stesso numero di esagoni
 // restano allo stesso livello, mentre l'incastro a metà altezza tra
 // colonne adiacenti resta corretto (è solo un cambio di origine per
-// colonna, non tocca le adiacenze).
+// colonna, non tocca le adiacenze). Si applica solo a Isole, che usa
+// ancora la generazione per colonne — Fiume usa l'elenco fisso sopra,
+// già corretto di suo (frutto della rotazione).
 export function createBoardShape(mode = 'standard') {
-  const tall = mode === 'isole' ? 4 : 5
-  const short = mode === 'isole' ? 3 : 4
-  const numCols = mode === 'isole' ? 7 : 5
+  if (mode !== 'isole') return RIVER_SHAPE
+
+  const tall = 4
+  const short = 3
   const cells = []
-  for (let col = 0; col < numCols; col++) {
+  for (let col = 0; col < 7; col++) {
     const len = col % 2 === 0 ? tall : short
     const rOffset = Math.floor(col / 2)
     for (let i = 0; i < len; i++) {
