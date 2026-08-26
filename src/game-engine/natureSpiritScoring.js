@@ -78,19 +78,10 @@ function computeBonus(board, rule, cardId) {
     }
 
     // Gatto: punti per ogni Edificio SENZA altri Edifici adiacenti.
-    case 'building_isolated': {
-      let count = 0
-      for (const { q, r } of boardCells(board)) {
-        const cell = getCell(board, q, r)
-        if (topColor(cell) !== 'red') continue
-        const hasBuildingNeighbor = boardNeighbors(board, q, r).some((n) => topColor(n.cell) === 'red')
-        if (!hasBuildingNeighbor) count++
-      }
-      return count * rule.points
-    }
-
     // Gru: punti per ogni GRUPPO di 2+ Edifici collegati tra loro (un
     // gruppo di 3+ vale comunque una volta sola, come da regolamento).
+    // Gatto usa lo stesso tipo con minSize:1 — anche un singolo
+    // Edificio isolato conta già come un gruppo da 4 punti.
     case 'building_group_isolated': {
       const groups = findConnectedGroups(board, (cell) => topColor(cell) === 'red')
       return groups.filter((g) => g.length >= rule.minSize).length * rule.points

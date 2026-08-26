@@ -64,9 +64,9 @@ export const NATURE_SPIRIT_CARDS = [
   {
     id: 'gatto',
     name: 'Gatto',
-    description: '4 punti per ogni Edificio isolato (senza altri Edifici adiacenti).',
+    description: '4 punti per ogni gruppo di Edifici collegati tra loro (anche un solo Edificio conta già come un gruppo).',
     habitat: chain([{ color: 'red', height: 2 }, 'green', { color: 'red', height: 2 }], 2),
-    scoreRule: { type: 'building_isolated', points: 4 }
+    scoreRule: { type: 'building_group_isolated', minSize: 1, points: 4 }
   },
   {
     id: 'gru',
