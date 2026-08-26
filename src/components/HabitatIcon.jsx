@@ -144,8 +144,11 @@ function CellStack({ cx, cy, stack, hasCube, cubeColor }) {
 
 // habitat: array di { dq, dr, color, height?, cube? }, formato di
 // game-engine/animalCards.js. cubeColor: ambra per le carte Animale
-// (default), bianco per le carte Spirito della Natura.
-export default function HabitatIcon({ habitat, cubeColor = CUBE_COLOR }) {
+// (default), bianco per le carte Spirito della Natura. cardId:
+// opzionale — se presente, mostra una piccola illustrazione in alto a
+// destra (risorsa statica in /public/animals/{cardId}.svg), senza
+// toccare in nessun modo il pattern esagonale esistente sotto.
+export default function HabitatIcon({ habitat, cubeColor = CUBE_COLOR, cardId }) {
   if (!habitat) {
     return <div style={{ fontSize: 10, color: '#c00', width: 70 }}>pattern non disponibile</div>
   }
@@ -157,7 +160,7 @@ export default function HabitatIcon({ habitat, cubeColor = CUBE_COLOR }) {
   const maxY = Math.max(...positions.map((p) => p.y)) + SIZE
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <svg
         viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}
         style={{ width: 80, height: 60, display: 'block' }}
@@ -170,6 +173,23 @@ export default function HabitatIcon({ habitat, cubeColor = CUBE_COLOR }) {
         ))}
       </svg>
 
+      {cardId && (
+        <img
+          src={`/animals/${cardId}.svg`}
+          alt=""
+          style={{
+            position: 'absolute',
+            top: -4,
+            right: -2,
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+            padding: 1
+          }}
+        />
+      )}
     </div>
   )
 }
