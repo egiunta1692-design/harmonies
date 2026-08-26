@@ -50,20 +50,29 @@ export default function HexBoard({
   const width = maxX - minX
   const height = maxY - minY
   const highlightSet = new Set(highlightCells.map(({ q, r }) => `${q},${r}`))
+  // Rotazione SOLO visiva della plancia Fiume: l'intera immagine ruota
+  // come un blocco unico, gli esagoni restano incastrati esattamente
+  // come definiti in hexGrid.js — le coordinate/adiacenze reali (e
+  // quindi il click sulle celle) non vengono toccate in nessun modo,
+  // la trasformazione CSS è applicata solo alla resa grafica.
+  const isRiver = boardState.boardMode !== 'isole'
 
   return (
-    <svg
-      viewBox={`${minX} ${minY} ${width} ${height}`}
-      style={{
-        width: 'auto',
-        height: 'auto',
-        maxWidth: '100%',
-        maxHeight: `${maxHeightVh}vh`,
-        minWidth: compact ? 120 : 200,
-        display: 'block',
-        margin: '0 auto'
-      }}
-    >
+    <div style={{ display: 'flex', justifyContent: 'center', overflow: 'visible' }}>
+      <svg
+        viewBox={`${minX} ${minY} ${width} ${height}`}
+        style={{
+          width: 'auto',
+          height: 'auto',
+          maxWidth: '100%',
+          maxHeight: `${maxHeightVh}vh`,
+          minWidth: compact ? 120 : 200,
+          display: 'block',
+          margin: '0 auto',
+          transform: isRiver ? 'rotate(90deg)' : 'none',
+          transformOrigin: 'center center'
+        }}
+      >
       {positions.map(({ q, r, x, y }) => {
         const cell = boardState.cells[`${q},${r}`] ?? { discs: [], animalCube: null }
         const isHighlighted = highlightSet.has(`${q},${r}`)
@@ -102,6 +111,7 @@ export default function HexBoard({
           </g>
         )
       })}
-    </svg>
+      </svg>
+    </div>
   )
 }
