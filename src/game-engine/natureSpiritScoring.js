@@ -96,10 +96,11 @@ function computeBonus(board, rule, cardId) {
       return count * rule.points
     }
 
-    // Farfalla: punti per ogni tessera Gialla ISOLATA (gruppo di 1 sola).
-    case 'yellow_isolated': {
+    // Farfalla: punti per ogni gruppo di dischi gialli, qualunque
+    // dimensione (con minSize:1, anche un singolo disco isolato conta).
+    case 'yellow_group': {
       const groups = findConnectedGroups(board, (cell) => topColor(cell) === 'yellow')
-      return groups.filter((g) => g.length === 1).length * rule.points
+      return groups.filter((g) => g.length >= rule.minSize).length * rule.points
     }
 
     // Leone: punti a scaglioni in base alla dimensione di ogni gruppo

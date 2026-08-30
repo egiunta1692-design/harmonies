@@ -85,10 +85,10 @@ export const NATURE_SPIRIT_CARDS = [
   {
     id: 'farfalla',
     name: 'Farfalla',
-    description: '5 punti per ogni tessera Gialla isolata (gruppo di 1 sola tessera).',
+    description: '5 punti per ogni gruppo di dischi gialli (anche un solo disco isolato conta già come un gruppo).',
     // sinistra=giallo, destra=giallo(cubo), sopra=azzurro, sotto=azzurro
     habitat: diamond('yellow', 'yellow', 'blue', 'blue', 1),
-    scoreRule: { type: 'yellow_isolated', points: 5 }
+    scoreRule: { type: 'yellow_group', minSize: 1, points: 5 }
   },
   {
     id: 'leone',
